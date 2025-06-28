@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'authentication',
     'explore',
-    
+    'diary',
+
 ]
 
 MIDDLEWARE = [
@@ -61,7 +62,7 @@ ROOT_URLCONF = 'travelbloom.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,7 +124,21 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS=['static']
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# media  root and url 
+
+MEDIA_ROOT = 'media'
+
+MEDIA_URL = '/media/'
+
+# settings for customized user model
+
+AUTH_USER_MODEL = 'authentication.Profile'
+

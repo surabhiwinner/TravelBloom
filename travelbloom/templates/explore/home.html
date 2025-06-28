@@ -1,7 +1,97 @@
-{% ectends 'base.html' %}
-
+{% extends "base.html" %}
+{% load static %}
 
 {% block section %}
+<div class="container-fluid">
+    <div class="container">
+        <h3>Your Current Location</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <p>Latitude: {{ latitude }}</p>
+            </div>
+            <div class="col-md-6">
+                <p>Longitude: {{ longitude }}</p>
+            </div>
+        </div>
 
+        <!-- Nearby Tourist Places -->
+        <div class="mt-4">
+            <h3>Nearby Tourist Attractions (100 km Radius)</h3>
+            <div id="places-list" class="row row-cols-1 row-cols-md-2 g-4 mt-2"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
+{% block scripts %}
+<!-- Google Maps JS -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLxqDusBc9-kRzhwjiMipCMRDj9SWTccU&libraries=places"></script>
+
+<script>
+  // Auto-fetch user's location and redirect
+  document.addEventListener("DOMContentLoaded", function () {
+    if (!window.location.href.includes("latitude")) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            window.location.href = `/home?latitude=${lat}&longitude=${lng}`;
+          },
+          (error) => {
+            console.error("Geolocation failed:", error.message);
+            alert("Unable to access your location. Please allow location access.");
+          }
+        );
+      } else {
+        alert("Geolocation is not supported by this browser.");
+      }
+    }
+  });
+
+  // Once location is loaded in URL, show nearby places
+  window.addEventListener("load", function () {
+    const lat = parseFloat("{{ latitude }}");
+    const lng = parseFloat("{{ longitude }}");
+
+    const dummyMapDiv = document.createElement('div'); // hidden dummy div
+    const map = new google.maps.Map(dummyMapDiv); // required for PlacesService
+
+    const service = new google.maps.places.PlacesService(map);
+    service.nearbySearch({
+      location: { lat: lat, lng: lng },
+      radius: 100000,
+      type: ['tourist_attraction']
+    }, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK) {
+        results.forEach(place => {
+          service.getDetails({ placeId: place.place_id }, (details, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+              const photoUrl = details.photos && details.photos.length > 0
+                ? details.photos[0].getUrl({ maxWidth: 300 })
+                : "{% static 'images/about_background.jpg' %}";
+
+              const cardHTML = `
+                <div class="col">
+                    <div class="card shadow-sm h-100">
+                        <img src="${photoUrl}" class="card-img-top" alt="${details.name}">
+                        <div class="card-body">
+                            <h5 class="card-title">${details.name}</h5>
+                            <p class="card-text">${details.vicinity || 'No address available'}</p>
+                            <p class="card-text">Rating: ${details.rating || 'N/A'}</p>
+                            <p class="card-text">Open Now: ${details.opening_hours ? (details.opening_hours.open_now ? 'Yes' : 'No') : 'N/A'}</p>
+                            <a href="${details.website || '#'}" class="btn btn-primary" target="_blank">Visit Website</a>
+                            <a href="https://www.google.com/maps/place/?q=place_id:${details.place_id}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">View on Google Maps</a>
+                        </div>
+                    </div>
+                </div>
+              `;
+              document.getElementById('places-list').innerHTML += cardHTML;
+            }
+          });
+        });
+      }
+    });
+  });
+</script>
 {% endblock %}
