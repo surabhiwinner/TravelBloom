@@ -809,14 +809,14 @@ section
 	height: 100%;
 	background-repeat: no-repeat;
 	background-size: cover;
-	background-position: center center;
+	background-position:70%;
 	opacity:0.5;
 }
 .home_slider_content
 {
-	position: absolute;
+	position:sticky;
 	top: 50%;
-	left: 50%;
+	left: 25%;
 	-webkit-transform: translate(-50%, -50%);
 	-moz-transform: translate(-50%, -50%);
 	-ms-transform: translate(-50%, -50%);
@@ -827,6 +827,7 @@ section
 .home_slider_content h1
 {
 	margin-bottom: 0px;
+	margin-left: 10px;
 }
 .home_slider_content h1:first-child
 {

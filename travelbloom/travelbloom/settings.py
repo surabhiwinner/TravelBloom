@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'authentication',
     'explore',
     'diary',
+    'widget_tweaks',
+    
 
 ]
 

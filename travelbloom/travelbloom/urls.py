@@ -25,7 +25,9 @@ urlpatterns = [
     
     path('admin/', admin.site.urls),
     path('explore/',include('explore.urls')),
-    path('diary/',include('diary.urls'))
+    path('diary/',include('diary.urls')),
+    path('authentication', include('authentication.urls')),
+
 
 ]
 
