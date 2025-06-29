@@ -6,22 +6,37 @@
     {% if diary_entries %}
         <ul class="list-group">
             {% for entry in diary_entries %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h3 class="mb-1 text-success">{{ entry.title }}</h3>
+                <li class="list-group-item list-group-item-action d-flex align-items-center shadow-sm mb-3 p-3 rounded">
+
+                    <!-- Media Preview (first image/video) -->
+                    {% with entry.media_files.first as media %}
+                        {% if media %}
+                            <img src="{{ media.file.url }}" alt="Preview" class="img-thumbnail me-3" style="width: 100px; height: auto;">
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Entry Info -->
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1 text-success">
+                            <a href="{% url 'diary_detail' entry.uuid %}" class="text-decoration-none text-success">
+                                {{ entry.title }}
+                            </a>
+                        </h5>
                         <small class="text-muted">
                             {{ entry.created_at|date:"F j, Y" }}
-                            {% if entry.latitude and entry.longitude %}
+                            {% if entry.place_name %}
+                                — {{ entry.place_name }}
+                            {% elif entry.latitude and entry.longitude %}
                                 — ({{ entry.latitude }}, {{ entry.longitude }})
                             {% endif %}
                         </small>
                     </div>
-                   
+
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>No diary entries yet.</p>
+        <p class="text-muted">No diary entries yet.</p>
     {% endif %}
 </div>
 {% endblock %}

@@ -14,6 +14,7 @@ class DiaryEntry(BaseClass):
 
     title = models.CharField(max_length=200)
     notes = models.TextField(blank=True)
+    place_name = models.CharField(max_length=255, blank=True, null=True)  # optional
 
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

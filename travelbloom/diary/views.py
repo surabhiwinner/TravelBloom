@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 
 from .forms import DiaryMediaForm ,DiaryEntryForm
 
@@ -74,4 +74,20 @@ class DiaryListView(View):
         data = { 'diary_entries' : diary_entries}
 
         return render(request,'diary/entry_list_page.html',context=data)
+    
+class DiaryEntryDetailView(View):
+
+    def get(self, request, *args, **kwargs):
+
+        uuid = kwargs.get('uuid')
+
+        diary_entry = get_object_or_404(DiaryEntry,uuid=uuid)
+
+        diary_media = diary_entry.media_files.all()
+        diary_entry.place_name = request.POST.get('place_name')
+
+
+        data = {'diary_entry' : diary_entry,
+                'diary_media' : diary_media}
+        return render(request,'diary/entry_details.html',context=data)
 

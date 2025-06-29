@@ -36,6 +36,7 @@
 
         <input type="hidden" name="latitude" id="latitude-field">
         <input type="hidden" name="longitude" id="longitude-field">
+        <input type="hidden" name="place_name" id="place-name-field">
 
         <div class="mb-3">
             <label for="id_file" class="form-label">Media File</label>
@@ -66,6 +67,7 @@ function initAutocomplete() {
     autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (place.geometry) {
+            document.getElementById("place-name-field").value = place.name || '';
             document.getElementById("latitude-field").value = place.geometry.location.lat();
             document.getElementById("longitude-field").value = place.geometry.location.lng();
         }
