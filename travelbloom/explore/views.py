@@ -9,13 +9,15 @@ from django.views import View
 
 from .models import Touristplace
 
+from django.conf import settings
+
 
 
 def map_view(request):
 
         places = Touristplace.objects.all()
 
-        return render(request,'explore/map.html')
+        return render(request,'explore/map.html',{'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY})
     
 @require_POST
 @csrf_protect

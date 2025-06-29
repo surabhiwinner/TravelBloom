@@ -14,7 +14,7 @@
 {{ places|json_script:"places-data" }}
 
 <!-- Maps script last, with a callback -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLxqDusBc9-kRzhwjiMipCMRDj9SWTccU&libraries=places&callback=initPage" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initPage" async defer></script>
 
 <script>
 function initPage() {

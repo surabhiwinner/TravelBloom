@@ -25,6 +25,7 @@ urlpatterns = [
     
     path('admin/', admin.site.urls),
     path('explore/',include('explore.urls')),
+    path('diary/',include('diary.urls'))
 
 ]
 

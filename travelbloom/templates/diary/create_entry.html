@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block section %}
+<div class="container mt-5">
+
+    <form method="POST" enctype="multipart/form-data" class="shadow p-4 bg-light rounded">
+        {% csrf_token %}
+
+        <!-- Header: Title + Save -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="m-0 fs-2 fw-bold text-center text-dark">Create Diary Entry</h4>
+            <button type="submit" class="btn btn-success">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+
+        <div class="mb-3">
+            <label for="id_title" class="form-label">Title</label>
+            {{ entry_form.title }}
+            {% if entry_form.title.errors %}
+                <p class="text-danger">{{ entry_form.title.errors|join:" " }}</p>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_notes" class="form-label">Notes</label>
+            {{ entry_form.notes }}
+            {% if entry_form.notes.errors %}
+                <p class="text-danger">{{ entry_form.notes.errors|join:" " }}</p>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="location-input" class="form-label">Location</label>
+            <input id="location-input" type="text" class="form-control" placeholder="Type location...">
+        </div>
+
+        <input type="hidden" name="latitude" id="latitude-field">
+        <input type="hidden" name="longitude" id="longitude-field">
+
+        <div class="mb-3">
+            <label for="id_file" class="form-label">Media File</label>
+            {{ media_form.file }}
+            {% if media_form.file.errors %}
+                <p class="text-danger">{{ entry_form.file.errors|join:" " }}</p>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_media_type" class="form-label">Media Type</label>
+            {{ media_form.media_type }}
+            {% if media_form.media_type.errors %}
+                <p class="text-danger">{{ media_form.media_type.errors|join:" " }}</p>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Google Places Autocomplete -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initAutocomplete" async defer></script>
+
+<script>
+function initAutocomplete() {
+    const input = document.getElementById("location-input");
+    const autocomplete = new google.maps.places.Autocomplete(input);
+
+    autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+            document.getElementById("latitude-field").value = place.geometry.location.lat();
+            document.getElementById("longitude-field").value = place.geometry.location.lng();
+        }
+    });
+}
+</script>
+{% endblock %}

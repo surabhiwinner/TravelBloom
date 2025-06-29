@@ -5,4 +5,5 @@ from . import models
 
 
 admin.site.register(models.DiaryEntry)
+
 admin.site.register(models.DiaryMedia)

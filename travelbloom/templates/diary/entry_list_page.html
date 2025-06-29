@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block section %}
+<div class="container mt-5">
+    <h2 class="mb-4">My Diary Entries</h2>
+
+    {% if diary_entries %}
+        <ul class="list-group">
+            {% for entry in diary_entries %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-1 text-success">{{ entry.title }}</h3>
+                        <small class="text-muted">
+                            {{ entry.created_at|date:"F j, Y" }}
+                            {% if entry.latitude and entry.longitude %}
+                                — ({{ entry.latitude }}, {{ entry.longitude }})
+                            {% endif %}
+                        </small>
+                    </div>
+                   
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No diary entries yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

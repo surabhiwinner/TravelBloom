@@ -142,3 +142,7 @@ MEDIA_URL = '/media/'
 
 AUTH_USER_MODEL = 'authentication.Profile'
 
+
+GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY')
+
+
