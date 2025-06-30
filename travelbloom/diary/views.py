@@ -71,23 +71,29 @@ class DiaryListView(View):
 
         diary_entries = DiaryEntry.objects.all()
 
-        data = { 'diary_entries' : diary_entries}
+        data = { 'diary_entries' : diary_entries,
+                'page' : 'diary-page'}
 
         return render(request,'diary/entry_list_page.html',context=data)
     
 class DiaryEntryDetailView(View):
+    def get(self, request, uuid):
+        diary_entry = get_object_or_404(DiaryEntry, uuid=uuid)
+        diary_media  = diary_entry.media_files.all()  # related_name='media_files'
+        context = {
+            "diary_entry": diary_entry,
+            "diary_media": diary_media,
+            "page": "diary-page"
+        }
+        return render(request, "diary/entry_details.html", context)
+
+class HomeView(View):
+
 
     def get(self, request, *args, **kwargs):
 
-        uuid = kwargs.get('uuid')
+        data = {
+            'page' : 'home-page'
+        }
 
-        diary_entry = get_object_or_404(DiaryEntry,uuid=uuid)
-
-        diary_media = diary_entry.media_files.all()
-        diary_entry.place_name = request.POST.get('place_name')
-
-
-        data = {'diary_entry' : diary_entry,
-                'diary_media' : diary_media}
-        return render(request,'diary/entry_details.html',context=data)
-
+        return render(request,'diary/home.html',context=data)

@@ -28,10 +28,13 @@ class DiaryMediaForm(forms.ModelForm):
         widgets = {
             'file': forms.ClearableFileInput(attrs={
                 'class': 'form-control',
-                'required' : 'required'
+                'required' : 'required',
+                'multiple': True
             }),
             'media_type': forms.Select(attrs={
                 'class': 'form-control',
                 'required' : 'required'
             }),
         }
+       
+  

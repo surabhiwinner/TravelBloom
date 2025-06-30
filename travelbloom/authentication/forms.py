@@ -12,3 +12,5 @@ class LoginForm(forms.Form):
                             'class' : 'form-control',
                             'required' : 'required'
     }))
+
+    

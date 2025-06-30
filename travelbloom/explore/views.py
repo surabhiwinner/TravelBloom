@@ -17,7 +17,10 @@ def map_view(request):
 
         places = Touristplace.objects.all()
 
-        return render(request,'explore/map.html',{'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY})
+        data = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY,
+                'page':'map-page'}
+
+        return render(request,'explore/map.html',context=data)
     
 @require_POST
 @csrf_protect

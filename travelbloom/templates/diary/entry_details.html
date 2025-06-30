@@ -1,4 +1,62 @@
-{% extends "base.html" %}
-{% block section %}
+{% extends "base.html" %} 
+{% load static %}
 
+{% block section %}
+<div class="container mt-5 mb-5">
+  <div class="card shadow-lg border-0">
+    <div class="card-body">
+      <h2 class="card-title text-primary">{{ diary_entry.title }}</h2>
+
+      <p class="text-muted mb-2">
+        {{ diary_entry.created_at|date:"F j, Y g:i a" }}
+        {% if diary_entry.latitude and diary_entry.longitude %}
+          &nbsp;|&nbsp; Location: ({{ diary_entry.latitude }}, {{ diary_entry.longitude }})
+        {% endif %}
+      </p>
+
+      <hr>
+
+      <h5 class="text-secondary">Notes</h5>
+      <p class="card-text">{{ diary_entry.notes|linebreaks }}</p>
+
+      {% if diary_media %}
+        <hr>
+        <h5 class="text-secondary mb-3">Media</h5>
+        <div class="row">
+          {% for media in diary_media %}
+            <div class="col-6 col-md-3 mb-4">
+              <div class="card h-100 shadow-sm border-0">
+                {% if media.media_type == "image" %}
+                 
+                  <img src="{{ media.file.url }}" class="card-img-top img-thumbnail"
+                       style="height:180px; object-fit:cover;" alt="Image">
+                <!-- {% elif media.media_type == "video" %}
+                  <video controls class="card-img-top img-thumbnail"
+                         style="height:180px; object-fit:cover;">
+                    <source src="{{ media.file.url }}">
+                  </video>
+                {% elif media.media_type == "audio" %}
+                  <div class="p-3 text-center">
+                    <audio controls class="w-100">
+                      <source src="{{ media.file.url }}">
+                    </audio>
+                  </div>
+                {% else %}
+                  <div class="p-3 text-center">
+                    <a href="{{ media.file.url }}" download
+                       class="btn btn-sm btn-outline-secondary">
+                      Download
+                    </a>
+                  </div>-->
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">No media files uploaded.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock %}

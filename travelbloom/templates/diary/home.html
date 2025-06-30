@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block section %}
+<style>
+	.hero-section {
+		background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url("{% static 'images/elements_background.jpg' %}") center center / cover no-repeat;
+		height: 90vh;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		color: white;
+		text-align: center;
+	}
+
+	.hero-content h1 {
+		font-size: 4rem;
+		font-weight: 700;
+		animation: fadeInDown 1s ease-in-out;
+	}
+
+	.hero-content p {
+		font-size: 1.4rem;
+		/* margin-top: 20px; */
+		animation: fadeInUp 1s ease-in-out;
+	}
+
+	.hero-content .btn {
+		margin-top: 30px;
+		padding: 12px 30px;
+		font-size: 1.1rem;
+		border-radius: 30px;
+	}
+
+	@keyframes fadeInDown {
+		from {
+			transform: translateY(-30px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	@keyframes fadeInUp {
+		from {
+			transform: translateY(30px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	.features-section {
+		padding: 60px 0;
+		background-color: #f9f9f9;
+	}
+
+	.feature-box {
+		text-align: center;
+		padding: 30px;
+		background: white;
+		border-radius: 12px;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+		transition: transform 0.3s ease;
+	}
+
+	.feature-box:hover {
+		transform: translateY(-10px);
+	}
+
+	.cta-section {
+		background: -moz-linear-gradient(#e4551d,#542091);
+		/* color: white; */
+		padding: 60px 20px;
+		text-align: center;
+	}
+</style>
+
+<!-- Hero Section -->
+<div class="hero-section">
+	<div class="hero-content">
+		<h1>Discover. Document. Relive.</h1>
+		<p>Capture your travel memories, from words to places, in one beautiful diary.</p>
+		<a href="{% url 'login' %}" class="btn btn-light">Start Your Journey</a>
+	</div>
+</div>
+
+<!-- Features Section -->
+<section class="features-section">
+	<div class="container">
+		<div class="row mb-5">
+			<div class="col text-center">
+				<h2 class="fw-bold">Why TravelBloom?</h2>
+				<p class="text-muted">Everything you need to make your trips unforgettable.</p>
+			</div>
+		</div>
+		<div class="row g-4">
+			<div class="col-md-4">
+				<div class="feature-box">
+					<i class="fas fa-pen-nib fa-2x text-primary mb-3"></i>
+					<h4>Write Daily Journals</h4>
+					<p>Pen your thoughts, plans, and reflections on every journey you take.</p>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="feature-box">
+					<i class="fas fa-camera-retro fa-2x text-success mb-3"></i>
+					<h4>Add Media Memories</h4>
+					<p>Attach photos, videos & voice notes that bring your experiences to life.</p>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="feature-box">
+					<i class="fas fa-map-marker-alt fa-2x text-danger mb-3"></i>
+					<h4>Map Your Locations</h4>
+					<p>Drop pins to remember where each entry was made — beautifully visualized.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Call to Action -->
+<div class="cta-section" style="background: linear-gradient(#e4551d,#2d0e4e);">
+	<div class="container">
+		<h2>Turn Your Travel Into Timeless Stories</h2>
+		<p class="">With TravelBloom, your adventure is always just a scroll away.</p>
+		<a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Get Started Now</a>
+	</div>
+</div>
+{% endblock %}

@@ -54,14 +54,14 @@
 						<div class="logo_container">
 							<a href="#"><img src="/static/images/logo.png" alt=""> <span class="text-white">TravelBloom</span></a>
 						</div>
-						<ul class="main_nav_list  d-flex align-items-center">
-							<li><a class="nav-link nav-item text-white " href="#">Home</a></li>
-							<li><a class="nav-link nav-item text-white " href="about.html">About</a></li>
-							<li><a class="nav-link nav-item text-white " href="offers.html">Offers</a></li>
-							<li><a class="nav-link nav-item text-white" href="blog.html">Blog</a></li>
-							<li><a class="nav-link nav-item text-white" href="contact.html">Contact</a></li>
+						<ul class="main_nav_list d-flex align-items-center">
+    <li><a class="nav-link nav-item {% if page == 'home-page' %}active text-white{% endif %}" href="{% url 'home' %}">Home</a></li>
+    <li><a class="nav-link nav-item {% if page == 'map-page' %}active text-white{% endif %}" href="{% url 'map' %}">Map</a></li>
+    <li><a class="nav-link nav-item {% if page == 'diary-page' %}active text-white{% endif %}" href="{% url 'diary-list' %}">Diary</a></li>
+    <li><a class="nav-link nav-item {% if page == 'blog-page' %}active text-white{% endif %}" href="">Blog</a></li>
+    <li><a class="nav-link nav-item {% if page == 'contact-page' %}active text-white{% endif %}" href="">Contact</a></li>
+</ul>
 
-						</ul>
 						<div class="hamburger d-lg-none">
 							<i class="fa fa-bars"></i>
 						</div>
@@ -74,7 +74,7 @@
 	{% block section %}
 	{% endblock %}
 
-	<footer class="footer mt-5">
+	<footer class="footer" style="background: -moz-linear-gradient(#e4551d, #6b3019);">
 		<div class="container">
 			<div class="row">
 				<div class="col-md-4">
