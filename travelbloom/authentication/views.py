@@ -39,7 +39,7 @@ class LoginView(View):
 
                 login(request, user)
 
-                return redirect('diary_list')
+                return redirect('diary-list')
             
             error ='Invalid credencials'
 

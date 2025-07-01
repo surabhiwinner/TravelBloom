@@ -1,5 +1,5 @@
 from django import forms
-from .models import DiaryEntry, DiaryMedia
+from .models import DiaryEntry, DiaryMedia,MediaChoices
 
 
 class DiaryEntryForm(forms.ModelForm):
@@ -21,20 +21,19 @@ class DiaryEntryForm(forms.ModelForm):
         }
 
 
+
 class DiaryMediaForm(forms.ModelForm):
-    class Meta:
+   class Meta:
         model = DiaryMedia
         fields = ['file', 'media_type']
         widgets = {
-            'file': forms.ClearableFileInput(attrs={
+            'file': forms.FileInput(attrs={
                 'class': 'form-control',
-                'required' : 'required',
-                'multiple': True
+                'required': True
+                
             }),
             'media_type': forms.Select(attrs={
                 'class': 'form-control',
-                'required' : 'required'
+                'required': True
             }),
         }
-       
-  

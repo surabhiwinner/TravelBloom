@@ -1,22 +1,21 @@
 {% extends "base.html" %}
+{% load static %}
 {% block section %}
 <div class="container mt-5">
-    <h2 class="mb-4">My Diary Entries</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">My Diary Entries</h2>
+        <a class="btn btn-success" href="{% url 'create' %}" title="Add New Entry">
+            <i class="fa-solid fa-plus"></i>
+        </a>
+    </div>
 
     {% if diary_entries %}
         <ul class="list-group">
             {% for entry in diary_entries %}
-                <li class="list-group-item list-group-item-action d-flex align-items-center shadow-sm mb-3 p-3 rounded">
-
-                    <!-- Media Preview (first image/video) -->
-                    {% with entry.media_files.first as media %}
-                        {% if media %}
-                            <img src="{{ media.file.url }}" alt="Preview" class="img-thumbnail me-3" style="width: 100px; height: auto;">
-                        {% endif %}
-                    {% endwith %}
+                <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-3 p-3 rounded">
 
                     <!-- Entry Info -->
-                    <div class="flex-grow-1">
+                    <div class="flex-grow-1 pe-3">
                         <h5 class="mb-1 text-success">
                             <a href="{% url 'diary_detail' entry.uuid %}" class="text-decoration-none text-success">
                                 {{ entry.title }}
@@ -32,11 +31,26 @@
                         </small>
                     </div>
 
+                    <!-- Preview Image -->
+                    {% with entry.media_files.all.0 as preview %}
+                        {% if preview %}
+                            <img src="{{ preview.file.url }}" alt="Preview for {{ entry.title }}"
+                                 class="img-thumbnail" style="width: 120px; height: 80px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'images/no-preview.png' %}" alt="No Image Available"
+                                 class="img-thumbnail" style="width: 120px; height: 80px; object-fit: cover;">
+                        {% endif %}
+                    {% endwith %}
+                   <a href="{% url 'diary-entry-delete' entry.uuid %}" class="text-danger"><i class="fas fa-trash"></i></a>
                 </li>
             {% endfor %}
+
+             
         </ul>
     {% else %}
-        <p class="text-muted">No diary entries yet.</p>
+        <div class="alert alert-info">No diary entries yet. Click the <strong>+</strong> button to create one.</div>
     {% endif %}
+
+   
 </div>
 {% endblock %}

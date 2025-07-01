@@ -8,6 +8,7 @@ urlpatterns = [
     path('entries/',views.DiaryListView.as_view(), name='diary-list'), 
     path('entries-detail/<str:uuid>/', views.DiaryEntryDetailView.as_view(), name='diary_detail'),
     path('home/', views.HomeView.as_view(), name= 'home'),
+    path('diary-delete/<str:uuid>', views.DiaryentryDeleteView.as_view(), name= 'diary-entry-delete')
 
 
 ]

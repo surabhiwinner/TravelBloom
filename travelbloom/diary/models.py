@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 
 class DiaryEntry(BaseClass):
 
-    profile = models.OneToOneField('authentication.Profile', on_delete=models.CASCADE)
+    profile = models.ForeignKey('authentication.Profile', on_delete=models.CASCADE, related_name='diary_entries')
 
     title = models.CharField(max_length=200)
     notes = models.TextField(blank=True)

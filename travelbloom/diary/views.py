@@ -40,7 +40,7 @@ class DiaryEntryWriteView(View):
         if entry_form.is_valid() and media_form.is_valid() :
 
             #get profile
-            profile = Profile.objects.get(user = request.user)
+            profile = request.user
 
             # create diary entry
             diary_entry = entry_form.save(commit=False)
@@ -58,11 +58,11 @@ class DiaryEntryWriteView(View):
 
             media_file = media_form.save(commit=False)
 
-            media_form.diary = diary_entry
+            media_file.diary = diary_entry
 
             media_file.save()
 
-            return redirect('entry-list')
+            return redirect('diary-list')
         
 
 class DiaryListView(View):
@@ -97,3 +97,16 @@ class HomeView(View):
         }
 
         return render(request,'diary/home.html',context=data)
+
+
+class DiaryentryDeleteView(View):
+
+    def get(self, request, *args , **kwargs) :
+
+        uuid = kwargs.get('uuid')
+
+        diary_entry = DiaryEntry.objects.get(uuid=uuid)
+
+        diary_entry.delete()
+
+        return redirect('diary-list')
