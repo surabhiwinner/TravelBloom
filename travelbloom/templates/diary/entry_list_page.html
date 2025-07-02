@@ -12,45 +12,54 @@
     {% if diary_entries %}
         <ul class="list-group">
             {% for entry in diary_entries %}
-                <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-3 p-3 rounded">
+                <li class="list-group-item shadow-sm mb-3 p-3 rounded">
+                    <div class="row align-items-center">
 
-                    <!-- Entry Info -->
-                    <div class="flex-grow-1 pe-3">
-                        <h5 class="mb-1 text-success">
-                            <a href="{% url 'diary_detail' entry.uuid %}" class="text-decoration-none text-success">
-                                {{ entry.title }}
+                        <!-- Entry Text -->
+                        <div class="col-md-8">
+                            <h5 class="mb-1 text-success">
+                                <a href="{% url 'diary_detail' entry.uuid %}" class="text-decoration-none text-success">
+                                    {{ entry.title }}
+                                </a>
+                            </h5>
+                            <small class="text-muted">
+                                {{ entry.created_at|date:"F j, Y" }}
+                                {% if entry.place_name %}
+                                    — {{ entry.place_name }}
+                                {% elif entry.latitude and entry.longitude %}
+                                    — ({{ entry.latitude }}, {{ entry.longitude }})
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <!-- Preview Image -->
+                        <div class="col-md-3 text-end ">
+                            {% with entry.media_files.all.0 as preview %}
+                                {% if preview %}
+                                    <img src="{{ preview.file.url }}" alt="Preview for {{ entry.title }}"
+                                         class="img-thumbnail" style="width: 100px; height: 70px; object-fit: cover;">
+                                {% else %}
+                                    <img src="{% static 'images/no-preview.png' %}" alt="No Image"
+                                         class="img-thumbnail" style="width: 100px; height: 70px; object-fit: cover;">
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+
+                        <!-- Delete Button -->
+                        <div class="col-md-1 text-end">
+                            <a href="{% url 'diary-entry-delete' entry.uuid %}" class="text-danger" title="Delete Entry">
+                                <i class="fas fa-trash"></i>
                             </a>
-                        </h5>
-                        <small class="text-muted">
-                            {{ entry.created_at|date:"F j, Y" }}
-                            {% if entry.place_name %}
-                                — {{ entry.place_name }}
-                            {% elif entry.latitude and entry.longitude %}
-                                — ({{ entry.latitude }}, {{ entry.longitude }})
-                            {% endif %}
-                        </small>
-                    </div>
+                        </div>
 
-                    <!-- Preview Image -->
-                    {% with entry.media_files.all.0 as preview %}
-                        {% if preview %}
-                            <img src="{{ preview.file.url }}" alt="Preview for {{ entry.title }}"
-                                 class="img-thumbnail" style="width: 120px; height: 80px; object-fit: cover;">
-                        {% else %}
-                            <img src="{% static 'images/no-preview.png' %}" alt="No Image Available"
-                                 class="img-thumbnail" style="width: 120px; height: 80px; object-fit: cover;">
-                        {% endif %}
-                    {% endwith %}
-                   <a href="{% url 'diary-entry-delete' entry.uuid %}" class="text-danger"><i class="fas fa-trash"></i></a>
+                    </div>
                 </li>
             {% endfor %}
-
-             
         </ul>
     {% else %}
-        <div class="alert alert-info">No diary entries yet. Click the <strong>+</strong> button to create one.</div>
+        <div class="alert alert-info">
+            No diary entries yet. Click the <strong>+</strong> button to create one.
+        </div>
     {% endif %}
-
-   
 </div>
 {% endblock %}

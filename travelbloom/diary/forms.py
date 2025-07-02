@@ -25,15 +25,11 @@ class DiaryEntryForm(forms.ModelForm):
 class DiaryMediaForm(forms.ModelForm):
    class Meta:
         model = DiaryMedia
-        fields = ['file', 'media_type']
-        widgets = {
-            'file': forms.FileInput(attrs={
-                'class': 'form-control',
-                'required': True
-                
-            }),
-            'media_type': forms.Select(attrs={
-                'class': 'form-control',
-                'required': True
-            }),
-        }
+        fields = ['file']
+        file = forms.FileField(
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'multiple': False
+        }),
+        required=False
+    )

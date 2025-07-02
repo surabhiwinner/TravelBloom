@@ -4,7 +4,16 @@ from django.contrib.auth import authenticate, login,logout
 
 from django.views import View
 
-from .forms import LoginForm
+from .forms import LoginForm,TravellerRegisterForm,ProfileForm
+
+from django.db import transaction
+
+from .models import Profile,Traveller
+
+import threading
+
+from django.contrib.auth.hashers import make_password
+
 # Create your views here.
 
 
@@ -59,6 +68,73 @@ class LogoutView(View):
 
             return redirect('home')
 
+class RegisterTravellerView(View):
+     
+    def get(self, request, *args, **kwargs):
+
+        profile_form = ProfileForm()
+
+        traveller_form = TravellerRegisterForm()
+
+
+
+        data ={
+            'traveller_form' : traveller_form,
+            'profile_form' :profile_form
+        }
+         
+        return render(request, 'authentication/register_user.html',context=data)
+    
+    def post(self, request, *args, **kwargs):
+
+        form= TravellerRegisterForm ( request.POST, request.FILES)
+
+        print(form.errors)
+
+        if form.is_valid():
+
+            with transaction.atomic():
+
+                first_name = form.cleaned_data['first_name']
+
+                last_name = form.cleaned_data['last_name']
+
+                # profile = form.save(commit=False)
+
+                email = form.cleaned_data.get('email')
+
+                password = form.cleaned_data.get('password')
+
+                number = form.cleaned_data['number']
+
+                image = form.cleaned_data['image']
+
+                profile = Profile.objects.create(
+
+                    username = email,
+                    first_name= first_name,
+                    last_name = last_name,
+                    email=email,
+                    role= 'User',
+                    password = make_password(password)
+                )
+
+                Traveller.objects.create(
+
+                    profile=profile,
+                    name=f'{first_name} {last_name}',
+                    email= email,
+                    number= number,
+                    image= image
+
+                )
+                return redirect ('login')
+            
+        return render(request, 'authentication/register_user.html', {'traveller_form': form})    
+
+
+
+            
 
 
 

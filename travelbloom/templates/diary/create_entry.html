@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block section %}
 <div class="container mt-5">
-
     <form method="POST" enctype="multipart/form-data" class="shadow p-4 bg-light rounded">
         {% csrf_token %}
 
         <!-- Header: Title + Save -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="m-0 fs-2 fw-bold text-center text-dark">Create Diary Entry</h4>
+            <h4 class="m-0 fs-2 fw-bold text-dark">Create Diary Entry</h4>
             <button type="submit" class="btn btn-success">
                 <i class="fa-solid fa-check"></i>
             </button>
         </div>
 
+        <!-- Title -->
         <div class="mb-3">
             <label for="id_title" class="form-label">Title</label>
             {{ entry_form.title }}
@@ -21,6 +21,7 @@
             {% endif %}
         </div>
 
+        <!-- Notes -->
         <div class="mb-3">
             <label for="id_notes" class="form-label">Notes</label>
             {{ entry_form.notes }}
@@ -29,6 +30,7 @@
             {% endif %}
         </div>
 
+        <!-- Location -->
         <div class="mb-3">
             <label for="location-input" class="form-label">Location</label>
             <input id="location-input" type="text" class="form-control" placeholder="Type location...">
@@ -38,19 +40,12 @@
         <input type="hidden" name="longitude" id="longitude-field">
         <input type="hidden" name="place_name" id="place-name-field">
 
+        <!-- Media Upload -->
         <div class="mb-3">
-            <label for="id_file" class="form-label">Media File</label>
+            <label for="id_file" class="form-label">Media File(s)</label>
             {{ media_form.file }}
             {% if media_form.file.errors %}
-                <p class="text-danger">{{ entry_form.file.errors|join:" " }}</p>
-            {% endif %}
-        </div>
-
-        <div class="mb-3">
-            <label for="id_media_type" class="form-label">Media Type</label>
-            {{ media_form.media_type }}
-            {% if media_form.media_type.errors %}
-                <p class="text-danger">{{ media_form.media_type.errors|join:" " }}</p>
+                <p class="text-danger">{{ media_form.file.errors|join:" " }}</p>
             {% endif %}
         </div>
     </form>
@@ -63,7 +58,6 @@
 function initAutocomplete() {
     const input = document.getElementById("location-input");
     const autocomplete = new google.maps.places.Autocomplete(input);
-
     autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (place.geometry) {

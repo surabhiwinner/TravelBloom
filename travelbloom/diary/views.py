@@ -10,6 +10,8 @@ from django.conf import settings
 
 from django.views import View
 
+import mimetypes
+
 # Create your views here.
 
 
@@ -31,45 +33,61 @@ class DiaryEntryWriteView(View):
 
         return render(request, 'diary/create_entry.html', context=data)
 
-    def post(self, request, *args , **kwargs):
-
+    def post(self, request, *args, **kwargs):
         entry_form = DiaryEntryForm(request.POST)
+        media_form = DiaryMediaForm(request.POST, request.FILES)
 
-        media_form = DiaryMediaForm(request.POST , request.FILES)
-
-        if entry_form.is_valid() and media_form.is_valid() :
-
-            #get profile
+        if entry_form.is_valid() and media_form.is_valid():
+            # Get the profile (your Profile is the User model)
             profile = request.user
 
-            # create diary entry
+            # Create diary entry
             diary_entry = entry_form.save(commit=False)
-
             diary_entry.profile = profile
-
             diary_entry.latitude = request.POST.get('latitude') or None
-
             diary_entry.longitude = request.POST.get('longitude') or None
-
+            diary_entry.place_name = request.POST.get('place_name') or None
             diary_entry.save()
 
-
-            # create media file
-
-            media_file = media_form.save(commit=False)
-
-            media_file.diary = diary_entry
-
-            media_file.save()
+            # Handle multiple media files
+            files = request.FILES.getlist('file')
+            for f in files:
+                media_type = detect_media_type(f)
+                DiaryMedia.objects.create(
+                    diary=diary_entry,
+                    file=f,
+                    media_type=media_type
+                )
 
             return redirect('diary-list')
-        
+
+        # If invalid, show form again
+        data = {
+            'entry_form': entry_form,
+            'media_form': media_form,
+            'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
+        }
+        return render(request, 'diary/create_entry.html', context=data)
+
 
 class DiaryListView(View):
 
     def get(self , request , *args , **kwargs):
 
-        diary_entries = DiaryEntry.objects.all()
+        if request.user.is_authenticated:
+
+            diary_entries = DiaryEntry.objects.all()
+
+            profile = request.user
+
+            if profile.role == 'User':
+
+                diary_entries = DiaryEntry.objects.filter(profile=profile)
+            else:
+                diary_entries = DiaryEntry.objects.all()
+
+
+
 
         data = { 'diary_entries' : diary_entries,
                 'page' : 'diary-page'}
@@ -110,3 +128,17 @@ class DiaryentryDeleteView(View):
         diary_entry.delete()
 
         return redirect('diary-list')
+    
+def detect_media_type(file):
+
+    mime_type, _ = mimetypes.guess_type(file.name)
+    if mime_type :
+        if mime_type.startswith('image'):
+
+            return 'Image'
+        elif mime_type.startswith('video'):
+
+            return 'Video'
+        
+    return 'Unknown'
+    

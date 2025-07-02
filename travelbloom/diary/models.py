@@ -13,10 +13,13 @@ class DiaryEntry(BaseClass):
     profile = models.ForeignKey('authentication.Profile', on_delete=models.CASCADE, related_name='diary_entries')
 
     title = models.CharField(max_length=200)
+
     notes = models.TextField(blank=True)
+
     place_name = models.CharField(max_length=255, blank=True, null=True)  # optional
 
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     def __str__(self):
@@ -43,7 +46,7 @@ class DiaryMedia(BaseClass):
 
     file = models.FileField(upload_to='diary_media/')
 
-    media_type = models.CharField(max_length=10,choices=MediaChoices.choices)
+    media_type = models.CharField(max_length=10,choices=MediaChoices.choices, blank=True)
 
     def __str__(self):
         return f"{self.media_type} - {self.file.name}"
