@@ -11,7 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- CSS -->
-    <link rel="stylesheet" type="text/css" href="/static/styles/bootstrap4/bootstrap.min.css">
+    <!-- <link rel="stylesheet" type="text/css" href="/static/styles/bootstrap4/bootstrap.min.css"> -->
     <link href="/static/plugins/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/owl.carousel.css">
     <link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/owl.theme.default.css">
@@ -142,125 +142,118 @@
 
 <!-- JS -->
 <script src="/static/js/jquery-3.2.1.min.js"></script>
-<script src="/static/styles/bootstrap4/popper.js"></script>
-<script src="/static/styles/bootstrap4/bootstrap.min.js"></script>
+<!-- <script src="/static/styles/bootstrap4/popper.js"></script> -->
+<!-- <script src="/static/styles/bootstrap4/bootstrap.min.js"></script> -->
 <script src="/static/plugins/OwlCarousel2-2.2.1/owl.carousel.js"></script>
 <script src="/static/plugins/easing/easing.js"></script>
 <script src="/static/js/custom.js"></script>
 
-<!-- Floating Chatbot -->
-<style>
-  #chatbot-toggle {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 9999;
-    background-color: #0d6efd;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    cursor: pointer;
-  }
+<!-- Location Toast -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+  <div id="locationToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">
+        Fetching location...
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
 
-  #chatbot-box {
-    position: fixed;
-    bottom: 90px;
-    right: 20px;
-    width: 350px;
-    max-height: 500px;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    display: none;
-    flex-direction: column;
-    z-index: 9999;
-    overflow: hidden;
-  }
 
-  #chatbot-box-header {
-    background-color: #0d6efd;
-    color: white;
-    padding: 10px;
-    font-weight: bold;
-    text-align: center;
-  }
-
-  #chatbox-body {
-    padding: 10px;
-    height: 300px;
-    overflow-y: auto;
-    font-size: 14px;
-  }
-
-  #chatbox-form {
-    display: flex;
-    border-top: 1px solid #ccc;
-  }
-
-  #chatbox-form input {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    font-size: 14px;
-  }
-
-  #chatbox-form button {
-    background-color: #0d6efd;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-  }
-</style>
-
-<button id="chatbot-toggle" title="Ask our Assistant">💬</button>
-
-<div id="chatbot-box">
-  <div id="chatbot-box-header">TravelBloom Assistant</div>
-  <div id="chatbox-body"></div>
-  <form id="chatbox-form">
-    <input type="text" id="chatbox-input" placeholder="Type your message..." autocomplete="off">
-    <button type="submit">Send</button>
-  </form>
+<!-- Floating Chat Icon -->
+<div id="chatbot-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <button class="btn btn-primary" onclick="toggleChat()">💬</button>
+    <div id="chatbox" style="display: none; width: 300px; height: 400px; background: white; box-shadow: 0 0 10px #ccc; border-radius: 10px; overflow: hidden;">
+        <div id="chat-messages" style="height: 85%; padding: 10px; overflow-y: auto;"></div>
+        <div class="input-group">
+            <input id="chat-input" class="form-control" placeholder="Ask me..." />
+            <button onclick="sendChat()" class="btn btn-success">Send</button>
+        </div>
+    </div>
 </div>
 
 <script>
-  document.getElementById('chatbot-toggle').addEventListener('click', () => {
-    const box = document.getElementById('chatbot-box');
-    box.style.display = (box.style.display === 'flex') ? 'none' : 'flex';
-    box.style.flexDirection = 'column';
-  });
+function toggleChat() {
+    const chatbox = document.getElementById("chatbox");
+    chatbox.style.display = chatbox.style.display === "none" ? "block" : "none";
+}
 
-  document.getElementById('chatbox-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const input = document.getElementById('chatbox-input');
-    const message = input.value.trim();
+let locationAttached = false;
+
+function sendChat() {
+    const input = document.getElementById("chat-input");
+    let message = input.value.trim();
     if (!message) return;
 
-    const body = document.getElementById('chatbox-body');
-    body.innerHTML += `<div class="text-end mb-2"><span class="badge bg-success">${message}</span></div>`;
-    input.value = '';
+    const messagesDiv = document.getElementById("chat-messages");
+    messagesDiv.innerHTML += `<div><strong>You:</strong> ${message}</div>`;
+    input.value = "";
 
-    fetch("{% url 'chat_message' %}", {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': '{{ csrf_token }}',
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `message=${encodeURIComponent(message)}`
-    })
-    .then(response => response.json())
-    .then(data => {
-      body.innerHTML += `<div class="text-start mb-2"><span class="badge bg-secondary">${data.response}</span></div>`;
-      body.scrollTop = body.scrollHeight;
+    const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+    if (!locationAttached && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const locationInfo = `Latitude: ${lat.toFixed(4)}, Longitude: ${lon.toFixed(4)}`;
+
+            // Show toast
+            document.getElementById("toastBody").innerText = `📍 Your location: ${locationInfo}`;
+            const toast = new bootstrap.Toast(document.getElementById("locationToast"));
+            toast.show();
+
+            message += `\nMy location: ${locationInfo}`;
+            locationAttached = true;
+            sendMessageToBot(message, csrfToken, messagesDiv);
+        }, function(error) {
+            sendMessageToBot(message, csrfToken, messagesDiv);
+        });
+    } else {
+        sendMessageToBot(message, csrfToken, messagesDiv);
+    }
+}
+
+// ✅ NEW: Trigger send on Enter key
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("chat-input");
+    input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();  // avoid newline
+            sendChat();
+        }
     });
-  });
+});
+
+function sendMessageToBot(message, csrfToken, messagesDiv) {
+    fetch("/chatbot/chat/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": csrfToken,
+        },
+        body: new URLSearchParams({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.response) {
+            messagesDiv.innerHTML += `<div><strong>Bot:</strong> ${data.response}</div>`;
+        } else if (data.error) {
+            messagesDiv.innerHTML += `<div><strong>Error:</strong> ${data.error}</div>`;
+        } else {
+            messagesDiv.innerHTML += `<div><strong>Error:</strong> Unknown error occurred.</div>`;
+        }
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;  // auto scroll
+    })
+    .catch(err => {
+        messagesDiv.innerHTML += `<div><strong>Error:</strong> Network error</div>`;
+    });
+}
 </script>
+
 </body>
 </html>

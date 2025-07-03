@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'explore',
     'diary',
     'widget_tweaks',
+    'chatbot',
+
     
 
 ]
@@ -148,5 +150,9 @@ AUTH_USER_MODEL = 'authentication.Profile'
 
 
 GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY')
+
+OPEN_AI_KEY = config('OPEN_AI_KEY_')
+
+GEMNI_API_KEY = config('GEMNI_KEY_')
 
 
