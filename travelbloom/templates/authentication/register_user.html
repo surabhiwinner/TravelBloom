@@ -1,47 +1,53 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block section %}
-<div class="container mt-5">
-    <div class="card shadow p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="text-success mb-0">Register Traveller</h2>
-            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
-                <i class="fa fa-home"></i> Back to Home
-            </a>
-        </div>
 
+{% block section %}
+
+<!-- Background Video -->
+<video autoplay muted loop id="bg-video" class="zoom-out-bg">
+    <source src="{% static 'video/background-video2.mp4' %}" type="video/mp4">
+    Your browser does not support HTML5 video.
+</video>
+<div class="video-overlay">
+<!-- Centered Form Container -->
+<div class="register-container d-flex align-items-center justify-content-center">
+    <div class="card shadow p-5 form-box">
+        <div class="text-center mb-4">
+            <h2 class="text-success">Register Traveller</h2>
+        </div>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            
-            <!-- Name -->
+
+            <!-- First Name -->
             <div class="mb-3">
-                <label for="id_name" class="form-label"> First Name</label>
+                <label class="form-label">First Name</label>
                 {{ profile_form.first_name }}
-                {% if traveller_form.first_name.errors %}
-                    <div class="text-danger">{{ traveller_form.first_name.errors.0 }}</div>
+                {% if profile_form.first_name.errors %}
+                    <div class="text-danger">{{ profile_form.first_name.errors.0 }}</div>
                 {% endif %}
             </div>
 
+            <!-- Last Name -->
             <div class="mb-3">
-                <label for="id_name" class="form-label"> Last Name</label>
+                <label class="form-label">Last Name</label>
                 {{ profile_form.last_name }}
-                {% if traveller_form.last_name.errors %}
-                    <div class="text-danger">{{ traveller_form.last_name.errors.0 }}</div>
+                {% if profile_form.last_name.errors %}
+                    <div class="text-danger">{{ profile_form.last_name.errors.0 }}</div>
                 {% endif %}
             </div>
 
             <!-- Email -->
             <div class="mb-3">
-                <label for="id_email" class="form-label">Email</label>
+                <label class="form-label">Email</label>
                 {{ profile_form.email }}
-                {% if traveller_form.email.errors %}
-                    <div class="text-danger">{{ traveller_form.email.errors.0 }}</div>
+                {% if profile_form.email.errors %}
+                    <div class="text-danger">{{ profile_form.email.errors.0 }}</div>
                 {% endif %}
             </div>
 
-
+            <!-- Number -->
             <div class="mb-3">
-                <label for="id_email" class="form-label">Number</label>
+                <label class="form-label">Number</label>
                 {{ traveller_form.number }}
                 {% if traveller_form.number.errors %}
                     <div class="text-danger">{{ traveller_form.number.errors.0 }}</div>
@@ -50,25 +56,60 @@
 
             <!-- Image -->
             <div class="mb-3">
-                <label for="id_image" class="form-label">Profile Image</label>
+                <label class="form-label">Profile Image</label>
                 {{ traveller_form.image }}
                 {% if traveller_form.image.errors %}
                     <div class="text-danger">{{ traveller_form.image.errors.0 }}</div>
                 {% endif %}
             </div>
 
-             <div class="mb-3">
-                <label for="id_image" class="form-label">Profile Image</label>
+            <!-- Password -->
+            <div class="mb-3">
+                <label class="form-label">Password</label>
                 {{ profile_form.password }}
                 {% if profile_form.password.errors %}
-                    <div class="text-danger">{{ traveller_form.image.errors.0 }}</div>
+                    <div class="text-danger">{{ profile_form.password.errors.0 }}</div>
                 {% endif %}
             </div>
 
-            <button type="submit" class="btn btn-success">
+            <button type="submit" class="btn btn-success w-100">
                 <i class="fa fa-save"></i> Register
             </button>
         </form>
     </div>
 </div>
+</div>
+
+<!-- Extra CSS -->
+<style>
+    #bg-video {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        min-width: 100%;
+        min-height: 100%;
+        z-index: -1;
+      
+        object-fit:cover;
+        
+    }
+    .video-overlay {
+    background: rgba(0, 0, 0, 0.4);  /* darkens background without reducing clarity */
+}
+
+
+    .register-container {
+        min-height: 100vh;
+        padding-top: 40px;
+        padding-bottom: 40px;
+    }
+
+    .form-box {
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+    }
+</style>
+
 {% endblock %}

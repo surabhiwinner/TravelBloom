@@ -47,4 +47,14 @@ def save_user_location(request):
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An internal server error occurred: {str(e)}'}, status=500)
-    
+
+class YourTripView(View):
+     
+     def get(self, request, *args,**kwargs):
+
+        data ={
+                 'page' : 'your-trip-page'
+            }
+        return render(request, 'explore/trip-list.html',context=data)  
+        
+     

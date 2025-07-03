@@ -1,139 +1,122 @@
 {% extends "base.html" %}
 {% load static %}
 {% block section %}
+
+<!-- 📍 Map Section -->
 <div class="container mt-5">
-    <h2 class="mb-4">Nearby Tourist Attractions (100 km Radius)</h2>
-    <div id="map" style="height:500px;width:100%;border-radius:10px;"></div>
+    <h2 class="mb-4">Nearby Tourist Attractions</h2>
+    <div id="map" style="height: 400px; width: 100%; border-radius: 10px;"></div>
 </div>
 
+<!-- 🎠 Slider Section -->
 <div class="container mt-5">
-    <h3 class="mb-3">Tourist Places Near You</h3>
-    <div id="places-list" class="row row-cols-1 row-cols-md-2 g-4"></div>
+    <h4 class="mb-3">Tourist Spots Around You</h4>
+    <div class="swiper mySwiper">
+        <div class="swiper-wrapper" id="places-list">
+            <!-- Slides will be added here -->
+        </div>
+        <!-- Navigation -->
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+    </div>
 </div>
 
-{{ places|json_script:"places-data" }}
+<!-- ✅ Swiper CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
-<!-- Maps script last, with a callback -->
+<!-- ✅ Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<!-- ✅ Google Maps API (load last) -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initPage" async defer></script>
 
+<!-- ✅ Page Script -->
 <script>
 function initPage() {
-    // -------- 1. Parse server‑rendered places (if you have any) --------
-    const placesData = JSON.parse(document.getElementById('places-data').textContent);
-
-    // -------- 2. Helper: CSRF for Ajax --------------------------------
-    function getCookie(name) {
-        return document.cookie.split(';')
-            .map(c => c.trim())
-            .find(c => c.startsWith(name + '='))?.split('=')[1] ?? null;
-    }
-    const csrftoken = decodeURIComponent(getCookie('csrftoken') || '');
-
-    async function sendLocationToDjango(lat, lng) {
-        try {
-            const resp = await fetch("{% url 'save_user_location' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify({ latitude: lat, longitude: lng })
-            });
-            if (!resp.ok) throw new Error(await resp.text());
-            console.log('Location saved:', await resp.json());
-        } catch (err) {
-            console.error('Failed to save location:', err);
-        }
-    }
-
-    // -------- 3. Core: set up map + nearby search ----------------------
-    function initMap(lat, lng) {
-        const map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat, lng },
-            zoom: 10
-        });
-
-        // a) “You are here” marker
-        new google.maps.Marker({ position: { lat, lng }, map, title: 'You are here' });
-
-        // b) Show server‑side places, if you have them
-        placesData.forEach(p =>
-            new google.maps.Marker({
-                position: { lat: p.latitude, lng: p.longitude },
-                map,
-                title: p.name
-            })
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            pos => loadMap(pos.coords.latitude, pos.coords.longitude),
+            () => loadMap(8.5241, 76.9366) // fallback to Thiruvananthapuram
         );
+    } else {
+        loadMap(8.5241, 76.9366);
+    }
+}
 
-        // c) Google Places nearby search
-        const service = new google.maps.places.PlacesService(map);
-        service.nearbySearch({
-            location: { lat, lng },
-            radius: 100000,            // 100 km
-            type: ['tourist_attraction']
-        }, (results, status) => {
-            const list = document.getElementById('places-list');
-            list.innerHTML = '';
+function loadMap(lat, lng) {
+    const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat, lng },
+        zoom: 12,
+    });
 
-            if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
-                list.innerHTML = `<p class="col-12">No tourist attractions found nearby (${status}).</p>`;
-                return;
-            }
+    new google.maps.Marker({
+        position: { lat, lng },
+        map,
+        title: "You are here"
+    });
 
-            results.forEach(place => {
-                if (!place.geometry?.location) return;
+    const service = new google.maps.places.PlacesService(map);
+    service.nearbySearch({
+        location: { lat, lng },
+        radius: 100000,
+        type: ["tourist_attraction"]
+    }, (results, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
+            console.error("Places error:", status);
+            return;
+        }
 
-                // Marker
+        const list = document.getElementById("places-list");
+        const detailPromises = results.map(place => {
+            return new Promise(resolve => {
+                if (!place.geometry?.location) return resolve();
+
                 new google.maps.Marker({
                     position: place.geometry.location,
                     map,
                     title: place.name
                 });
 
-                // Card
                 service.getDetails({ placeId: place.place_id }, (details, s) => {
-                    if (s !== google.maps.places.PlacesServiceStatus.OK) return;
-                    const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 300 }) ||
-                                     "{% static 'images/default.jpg' %}";
+                    if (s !== google.maps.places.PlacesServiceStatus.OK) return resolve();
+
+                    const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 300 }) || "https://via.placeholder.com/300";
+
                     list.insertAdjacentHTML('beforeend', `
-                        <div class="col">
-                            <div class="card shadow-sm h-100">
+                        <div class="swiper-slide">
+                            <div class="card shadow-sm" style="width: 300px;">
                                 <img src="${photoUrl}" class="card-img-top" alt="${details.name}">
                                 <div class="card-body">
                                     <h5 class="card-title">${details.name}</h5>
-                                    <p class="card-text">${details.formatted_address || ''}</p>
-                                    <a href="https://www.google.com/maps/search/?api=1&query_place_id=${details.place_id}"
-                                       target="_blank" class="btn btn-outline-primary btn-sm">
-                                        View on Google Maps
-                                    </a>
+                                    <p class="card-text">${details.formatted_address || ""}</p>
+                                    <a href="https://www.google.com/maps/search/?api=1&query_place_id=${details.place_id}" 
+                                       target="_blank" class="btn btn-outline-primary btn-sm">View on Google Maps</a>
                                 </div>
                             </div>
                         </div>
                     `);
+
+                    resolve();
                 });
             });
         });
-    }
 
-    // -------- 4. Get user (or fallback) location -----------------------
-    function startWith(lat, lng) {
-        initMap(lat, lng);
-        sendLocationToDjango(lat, lng);
-    }
-
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => startWith(pos.coords.latitude, pos.coords.longitude),
-            err  => {
-                alert('Could not access your location – falling back to Thiruvananthapuram.');
-                startWith(8.5241, 76.9366);
-            },
-            { timeout: 10000 }
-        );
-    } else {
-        alert('Geolocation not supported – showing Thiruvananthapuram.');
-        startWith(8.5241, 76.9366);
-    }
+        Promise.all(detailPromises).then(() => {
+            new Swiper(".mySwiper", {
+                slidesPerView: 1,
+                spaceBetween: 20,
+                breakpoints: {
+                    640: { slidesPerView: 2 },
+                    1024: { slidesPerView: 3 },
+                },
+                navigation: {
+                    nextEl: ".swiper-button-next",
+                    prevEl: ".swiper-button-prev",
+                },
+            });
+        });
+    });
 }
 </script>
+
 {% endblock %}

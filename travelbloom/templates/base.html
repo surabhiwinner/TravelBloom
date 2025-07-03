@@ -1,109 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>TravelBloom</title>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="description" content="Travelix Project">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" type="text/css" href="/static/styles/bootstrap4/bootstrap.min.css">
-<link href="/static/plugins/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-<link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/owl.carousel.css">
-<link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/owl.theme.default.css">
-<link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/animate.css">
-<link rel="stylesheet" type="text/css" href="/static/styles/main_styles.css">
-<link rel="stylesheet" type="text/css" href="/static/styles/responsive.css">
+    <title>TravelBloom</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Travelix Project">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- fontawsome cdn  -->
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="/static/styles/bootstrap4/bootstrap.min.css">
+    <link href="/static/plugins/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/owl.carousel.css">
+    <link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/owl.theme.default.css">
+    <link rel="stylesheet" type="text/css" href="/static/plugins/OwlCarousel2-2.2.1/animate.css">
+    <link rel="stylesheet" type="text/css" href="/static/styles/main_styles.css">
+    <link rel="stylesheet" type="text/css" href="/static/styles/responsive.css">
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- Swiper -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 </head>
 
 <body>
-
 <div class="super_container">
 
-	<!-- Header -->
-	<header class="header">
-		<div class="top_bar">
-			<div class="container">
-				<div class="row">
-					<div class="col d-flex flex-row">
-						<div class="phone">+45 345 3324 56789</div>
-						<div class="social ml-auto">
-							<ul class="social_list d-flex">
-								<li><a href="#"><i class="fa fa-pinterest"></i></a></li>
-								<li><a href="#"><i class="fa fa-facebook"></i></a></li>
-								<li><a href="#"><i class="fa fa-twitter"></i></a></li>
-								<li><a href="#"><i class="fa fa-instagram"></i></a></li>
-								<li><a href="#"><i class="fa fa-linkedin"></i></a></li>
-							</ul>
-						</div>
-						<div class="user_box ml-4">
-							<a href="{% url 'login' %}">Login</a> / <a href="{% url 'register' %}">Register</a>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+    <!-- Header -->
+    <header class="header">
+        <div class="top_bar">
+            <div class="container">
+                <div class="row">
+                    <div class="col d-flex flex-row">
+                        <div class="phone">+45 345 3324 56789</div>
+                        <div class="social ml-auto">
+                            <ul class="social_list d-flex">
+                                <li><a href="#"><i class="fa fa-pinterest"></i></a></li>
+                                <li><a href="#"><i class="fa fa-facebook"></i></a></li>
+                                <li><a href="#"><i class="fa fa-twitter"></i></a></li>
+                                <li><a href="#"><i class="fa fa-instagram"></i></a></li>
+                                <li><a href="#"><i class="fa fa-linkedin"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="user_box ml-4">
+                            <a href="{% url 'login' %}">Login</a> / <a href="{% url 'register' %}">Register</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-		<nav class="main_nav">
-			<div class="container">
-				<div class="row">
-					<div class="col d-flex justify-content-between align-items-center">
-						<div class="logo_container">
-							<a href="#"><img src="/static/images/logo.png" alt=""> <span class="text-white">TravelBloom</span></a>
-						</div>
-						<ul class="main_nav_list d-flex align-items-center">
-    <li><a class="nav-link nav-item {% if page == 'home-page' %}active text-white{% endif %}" href="{% url 'home' %}">Home</a></li>
-    <li><a class="nav-link nav-item {% if page == 'map-page' %}active text-white{% endif %}" href="{% url 'map' %}">Map</a></li>
-    <li><a class="nav-link nav-item {% if page == 'diary-page' %}active text-white{% endif %}" href="{% url 'diary-list' %}">Diary</a></li>
-    <li><a class="nav-link nav-item {% if page == 'blog-page' %}active text-white{% endif %}" href="">Blog</a></li>
-    <li><a class="nav-link nav-item {% if page == 'contact-page' %}active text-white{% endif %}" href="">Contact</a></li>
-</ul>
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="#">
+                    <img src="/static/images/logo.png" alt="Logo" style="height: 30px;"> TravelBloom
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-						<div class="hamburger d-lg-none">
-							<i class="fa fa-bars"></i>
-						</div>
-					</div>
-				</div>
-			</div>
-		</nav>
-	</header>
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav ms-auto d-flex align-items-center gap-3">
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'home-page' %}active{% endif %}" href="{% url 'home' %}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'map-page' %}active{% endif %}" href="{% url 'map' %}">Map</a>
+                        </li>
+                        {% user_role_checking request 'Admin,User' as allow %}
+                        {% if allow %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'diary-page' %}active{% endif %}" href="{% url 'diary-list' %}">Diary</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'your-trip-page' %}active{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'blog-page' %}active{% endif %}" href="#">Blog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'contact-page' %}active{% endif %}" href="#">Contact</a>
+                        </li>
 
-	{% block section %}
-	{% endblock %}
+                        {% if request.user.is_authenticated %}
+                        {% user_role_checking request 'Admin,User' as allow %}
+                        {% if allow %}
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" data-bs-toggle="dropdown">
+                                <img src="/static/images/user.png" class="rounded-circle me-2" style="width: 30px; height: 30px;">
+                                <p class="text-secondary ms-1 mb-0">{{ user }}</p>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
 
-	<footer class="footer" style="background: -moz-linear-gradient(#e4551d, #6b3019);">
-		<div class="container">
-			<div class="row">
-				<div class="col-md-4">
-					<h5>About Travelix</h5>
-					<p>Discover places. Record memories. Share journeys. Your digital travel diary starts here.</p>
-				</div>
-				<div class="col-md-4">
-					<h5>Quick Links</h5>
-					<ul class="list-unstyled">
-						<li><a href="#">Home</a></li>
-						<li><a href="about.html">About</a></li>
-						<li><a href="offers.html">Offers</a></li>
-						<li><a href="contact.html">Contact</a></li>
-					</ul>
-				</div>
-				<div class="col-md-4">
-					<h5>Contact</h5>
-					<p>Email: contact@travelix.com<br>Phone: +45 345 3324 56789</p>
-				</div>
-			</div>
-		</div>
-	</footer>
+    {% block section %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="footer" style="background: -moz-linear-gradient(#e4551d, #6b3019);">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>About Travelix</h5>
+                    <p>Discover places. Record memories. Share journeys. Your digital travel diary starts here.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Home</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="offers.html">Offers</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contact</h5>
+                    <p>Email: contact@travelix.com<br>Phone: +45 345 3324 56789</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </div>
 
+<!-- JS -->
 <script src="/static/js/jquery-3.2.1.min.js"></script>
 <script src="/static/styles/bootstrap4/popper.js"></script>
 <script src="/static/styles/bootstrap4/bootstrap.min.js"></script>
 <script src="/static/plugins/OwlCarousel2-2.2.1/owl.carousel.js"></script>
 <script src="/static/plugins/easing/easing.js"></script>
 <script src="/static/js/custom.js"></script>
+
+<!-- Floating Chatbot -->
+<style>
+  #chatbot-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+
+  #chatbot-box {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    display: none;
+    flex-direction: column;
+    z-index: 9999;
+    overflow: hidden;
+  }
+
+  #chatbot-box-header {
+    background-color: #0d6efd;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  #chatbox-body {
+    padding: 10px;
+    height: 300px;
+    overflow-y: auto;
+    font-size: 14px;
+  }
+
+  #chatbox-form {
+    display: flex;
+    border-top: 1px solid #ccc;
+  }
+
+  #chatbox-form input {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  #chatbox-form button {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+  }
+</style>
+
+<button id="chatbot-toggle" title="Ask our Assistant">💬</button>
+
+<div id="chatbot-box">
+  <div id="chatbot-box-header">TravelBloom Assistant</div>
+  <div id="chatbox-body"></div>
+  <form id="chatbox-form">
+    <input type="text" id="chatbox-input" placeholder="Type your message..." autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+  document.getElementById('chatbot-toggle').addEventListener('click', () => {
+    const box = document.getElementById('chatbot-box');
+    box.style.display = (box.style.display === 'flex') ? 'none' : 'flex';
+    box.style.flexDirection = 'column';
+  });
+
+  document.getElementById('chatbox-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('chatbox-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    const body = document.getElementById('chatbox-body');
+    body.innerHTML += `<div class="text-end mb-2"><span class="badge bg-success">${message}</span></div>`;
+    input.value = '';
+
+    fetch("{% url 'chat_message' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `message=${encodeURIComponent(message)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+      body.innerHTML += `<div class="text-start mb-2"><span class="badge bg-secondary">${data.response}</span></div>`;
+      body.scrollTop = body.scrollHeight;
+    });
+  });
+</script>
 </body>
 </html>

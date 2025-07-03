@@ -14,6 +14,10 @@ import threading
 
 from django.contrib.auth.hashers import make_password
 
+from django.utils.decorators import method_decorator
+
+from django.views.decorators.cache import never_cache
+
 # Create your views here.
 
 
@@ -59,14 +63,18 @@ class LoginView(View):
             }
 
             return render(request,'authentication/login.html', context=data)
-
+        
+@method_decorator(never_cache, name='dispatch')
 class LogoutView(View):
         
         def get(self,request, *args, **kwargs):
              
             logout(request)
 
+            request.session.flush()
+
             return redirect('home')
+        
 
 class RegisterTravellerView(View):
      

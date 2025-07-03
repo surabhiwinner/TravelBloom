@@ -12,6 +12,8 @@ from django.views import View
 
 import mimetypes
 
+from django.http import JsonResponse
+
 # Create your views here.
 
 
@@ -43,16 +45,24 @@ class DiaryEntryWriteView(View):
 
             # Create diary entry
             diary_entry = entry_form.save(commit=False)
+
             diary_entry.profile = profile
+
             diary_entry.latitude = request.POST.get('latitude') or None
+
             diary_entry.longitude = request.POST.get('longitude') or None
+
             diary_entry.place_name = request.POST.get('place_name') or None
+
             diary_entry.save()
 
             # Handle multiple media files
             files = request.FILES.getlist('file')
+
             for f in files:
+
                 media_type = detect_media_type(f)
+
                 DiaryMedia.objects.create(
                     diary=diary_entry,
                     file=f,
@@ -64,7 +74,9 @@ class DiaryEntryWriteView(View):
         # If invalid, show form again
         data = {
             'entry_form': entry_form,
+
             'media_form': media_form,
+
             'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
         }
         return render(request, 'diary/create_entry.html', context=data)
@@ -141,4 +153,31 @@ def detect_media_type(file):
             return 'Video'
         
     return 'Unknown'
+    
+
+class ChatView(View):
+    def get(self, request):
+
+        return render(request,'diary/chatbot.html')
+    
+class ChatMessageView(View):
+
+    def post(self, request):
+
+        user_msg = request.POST.get('message','')
+
+        # basic rule-based bot
+
+        if 'hello' in user_msg.lower():
+
+            bot_response = "Hi there! How can I help with your trip?"
+
+        elif 'trip' in user_msg.lower():
+
+            bot_response = "Are you planning a new trip or checking past ones?"
+        else:
+            bot_response = "I'm not sure how to respond to that yet 😅"
+
+        
+        return JsonResponse({'response' : bot_response})
     

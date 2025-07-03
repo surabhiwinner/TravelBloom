@@ -6,5 +6,6 @@ urlpatterns = [
     path('map/', views.map_view, name='map'),
     # path('home/', views.HomeView.as_view(), name='home'),
     path('save-user-location/', views.save_user_location, name='save_user_location'),
-
-]
+    path('your-trip/',views.YourTripView.as_view(),name= 'your-trip'),
+    
+    ]
