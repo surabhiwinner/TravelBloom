@@ -22,6 +22,8 @@ import requests
 
 from django.views.decorators.http import require_POST
 
+import math 
+
 GOOGLE = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
 def map_view(request):
@@ -121,5 +123,63 @@ def build_route(request):
         place_ids = body.get("place_ids", [])
         print("Received place_ids:", place_ids)
         return JsonResponse({"waypoints": place_ids})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+def haversine(lat1, lon1, lat2, lon2):
+    # Haversine formula to calculate distance between two lat/lng points in km
+    R = 6371  # Earth radius in kilometers
+    dLat = math.radians(lat2 - lat1)
+    dLon = math.radians(lon2 - lon1)
+    a = math.sin(dLat / 2) ** 2 + math.cos(math.radians(lat1)) \
+        * math.cos(math.radians(lat2)) * math.sin(dLon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+
+@require_POST
+@csrf_exempt
+def build_route(request):
+    try:
+        body = json.loads(request.body)
+        place_ids = body.get("place_ids", [])
+
+        if len(place_ids) < 2:
+            return JsonResponse({"error": "Select at least two places."}, status=400)
+
+        details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+
+        # Fetch lat/lng of all places
+        places = []
+        for pid in place_ids:
+            res = requests.get(details_url, params={
+                "place_id": pid,
+                "key": settings.GOOGLE_MAPS_API_KEY,
+                "fields": "geometry/location"
+            }).json()
+
+            loc = res.get("result", {}).get("geometry", {}).get("location")
+            if loc:
+                places.append({
+                    "place_id": pid,
+                    "lat": loc["lat"],
+                    "lng": loc["lng"]
+                })
+
+        # Sort by distance from the first location (greedy sort)
+        start = places[0]
+        ordered = [start]
+        places_left = places[1:]
+
+        while places_left:
+            last = ordered[-1]
+            nearest = min(places_left, key=lambda p: haversine(last["lat"], last["lng"], p["lat"], p["lng"]))
+            ordered.append(nearest)
+            places_left.remove(nearest)
+
+        ordered_ids = [p["place_id"] for p in ordered]
+
+        return JsonResponse({"waypoints": ordered_ids})
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
