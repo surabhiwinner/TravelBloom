@@ -2,120 +2,128 @@
 {% load static %}
 {% block section %}
 
-<!-- 📍 Map Section -->
+<!-- 📍 MAP -->
 <div class="container mt-5">
     <h2 class="mb-4">Nearby Tourist Attractions</h2>
-    <div id="map" style="height: 400px; width: 100%; border-radius: 10px;"></div>
+    <div id="map" style="height:400px;width:100%;border-radius:10px;"></div>
 </div>
 
-<!-- 🎠 Slider Section -->
+<!-- 🎠 SLIDER -->
 <div class="container mt-5">
     <h4 class="mb-3">Tourist Spots Around You</h4>
     <div class="swiper mySwiper">
-        <div class="swiper-wrapper" id="places-list">
-            <!-- Slides will be added here -->
-        </div>
-        <!-- Navigation -->
+        <div class="swiper-wrapper" id="places-list"></div>
         <div class="swiper-button-next"></div>
         <div class="swiper-button-prev"></div>
     </div>
 </div>
 
-<!-- ✅ Swiper CSS -->
+<!-- Swiper -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-
-<!-- ✅ Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-<!-- ✅ Google Maps API (load last) -->
-<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initPage" async defer></script>
+<!-- Google Maps JS + Places (New) -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=beta&callback=initMap" async defer></script>
 
-<!-- ✅ Page Script -->
 <script>
-function initPage() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => loadMap(pos.coords.latitude, pos.coords.longitude),
-            () => loadMap(8.5241, 76.9366) // fallback to Thiruvananthapuram
-        );
-    } else {
-        loadMap(8.5241, 76.9366);
-    }
+let map;
+
+async function initMap () {
+  /* ---- import the new modular libraries ---- */
+  const { Map }                = await google.maps.importLibrary('maps');
+  const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
+  const { Place }              = await google.maps.importLibrary('places');
+
+  /* ---- get user position (high accuracy) ---- */
+  const location = await getUserLocation();
+  console.log('📍 Centring map at', location);
+
+  /* ---- init map & centre on user ---- */
+  map = new Map(document.getElementById('map'), {
+    center: location,
+    zoom: 15,                    // city‑level
+    mapId: '995bf07e5e9b252015e55248'  // your custom map style ID
+  });
+
+  new AdvancedMarkerElement({ map, position: location, title: 'You are here' });
+
+  /* ---- fetch nearby tourist attractions ---- */
+  const { places } = await Place.searchNearby({
+    locationRestriction: { center: location, radius: 5000 },
+    includedPrimaryTypes: ['tourist_attraction'],
+    maxResultCount: 10
+  });
+
+  if (!places?.length) {
+    console.warn('⚠️ No tourist places found nearby.');
+    return;
+  }
+
+  const wrapper = document.getElementById('places-list');
+
+  for (const place of places) {
+    const data = place;                 // already fully populated object
+
+    /* map marker */
+    new AdvancedMarkerElement({
+      map,
+      position: data.location,
+      title: data.displayName?.text || 'Tourist Spot'
+    });
+
+    /* card contents */
+    const image   = data.photos?.[0]?.getURL() || 'https://via.placeholder.com/300';
+    const title   = data.displayName?.text || 'Unknown';
+    const address = data.formattedAddress || 'No address';
+    const rating  = data.rating ? `${data.rating} ★` : 'No rating';
+    const reviews = data.userRatingCount ? `${data.userRatingCount} reviews` : '';
+    const hours   = data.openingHours?.weekdayDescriptions?.join('<br>') || 'No timing info';
+
+    wrapper.insertAdjacentHTML('beforeend', `
+      <div class="swiper-slide">
+        <div class="card shadow-sm" style="width:300px;">
+          <img src="${image}" class="card-img-top" alt="${title}">
+          <div class="card-body">
+            <h5 class="card-title">${title}</h5>
+            <p class="card-text"><strong>📍</strong> ${address}</p>
+            <p class="text-muted small">⭐ ${rating} &nbsp; ${reviews}</p>
+            <p class="small">${hours}</p>
+            <a href="${data.googleMapsUri}" target="_blank"
+               class="btn btn-sm btn-outline-primary">View on Google Maps</a>
+          </div>
+        </div>
+      </div>
+    `);
+  }
+
+  /* ---- init Swiper after cards exist ---- */
+  new Swiper('.mySwiper', {
+    slidesPerView: 1,
+    spaceBetween: 20,
+    breakpoints: { 640: {slidesPerView: 2}, 1024: {slidesPerView: 3} },
+    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }
+  });
 }
 
-function loadMap(lat, lng) {
-    const map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat, lng },
-        zoom: 12,
-    });
-
-    new google.maps.Marker({
-        position: { lat, lng },
-        map,
-        title: "You are here"
-    });
-
-    const service = new google.maps.places.PlacesService(map);
-    service.nearbySearch({
-        location: { lat, lng },
-        radius: 100000,
-        type: ["tourist_attraction"]
-    }, (results, status) => {
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
-            console.error("Places error:", status);
-            return;
-        }
-
-        const list = document.getElementById("places-list");
-        const detailPromises = results.map(place => {
-            return new Promise(resolve => {
-                if (!place.geometry?.location) return resolve();
-
-                new google.maps.Marker({
-                    position: place.geometry.location,
-                    map,
-                    title: place.name
-                });
-
-                service.getDetails({ placeId: place.place_id }, (details, s) => {
-                    if (s !== google.maps.places.PlacesServiceStatus.OK) return resolve();
-
-                    const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 300 }) || "https://via.placeholder.com/300";
-
-                    list.insertAdjacentHTML('beforeend', `
-                        <div class="swiper-slide">
-                            <div class="card shadow-sm" style="width: 300px;">
-                                <img src="${photoUrl}" class="card-img-top" alt="${details.name}">
-                                <div class="card-body">
-                                    <h5 class="card-title">${details.name}</h5>
-                                    <p class="card-text">${details.formatted_address || ""}</p>
-                                    <a href="https://www.google.com/maps/search/?api=1&query_place_id=${details.place_id}" 
-                                       target="_blank" class="btn btn-outline-primary btn-sm">View on Google Maps</a>
-                                </div>
-                            </div>
-                        </div>
-                    `);
-
-                    resolve();
-                });
-            });
-        });
-
-        Promise.all(detailPromises).then(() => {
-            new Swiper(".mySwiper", {
-                slidesPerView: 1,
-                spaceBetween: 20,
-                breakpoints: {
-                    640: { slidesPerView: 2 },
-                    1024: { slidesPerView: 3 },
-                },
-                navigation: {
-                    nextEl: ".swiper-button-next",
-                    prevEl: ".swiper-button-prev",
-                },
-            });
-        });
-    });
+/* getUserLocation: hi‑accuracy, 5‑s timeout, fallback to Thiruvananthapuram */
+function getUserLocation () {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      console.warn('❌ Geolocation not supported');
+      return resolve({ lat: 8.5241, lng: 76.9366 });
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        console.log('✅ User location:', pos.coords);
+        resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      (err) => {
+        console.warn('⚠️ Geolocation error:', err.message);
+        resolve({ lat: 8.5241, lng: 76.9366 });
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  });
 }
 </script>
 

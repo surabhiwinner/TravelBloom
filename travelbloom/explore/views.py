@@ -1,8 +1,13 @@
 from django.shortcuts import render
+
 from django.http import JsonResponse
+
 from django.utils.decorators import method_decorator
+
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_protect
+
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+
 import json
 # Create your views here.
 from django.views import View
@@ -11,7 +16,13 @@ from .models import Touristplace
 
 from django.conf import settings
 
+from google import generativeai as genai  # new client class
 
+import requests
+
+from django.views.decorators.http import require_POST
+
+GOOGLE = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
 def map_view(request):
 
@@ -56,5 +67,59 @@ class YourTripView(View):
                  'page' : 'your-trip-page'
             }
         return render(request, 'explore/trip-list.html',context=data)  
+
+def get_nearby_places(lat,lng,keyword=None, radius=5000):
+   
+    url= "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    params = {
+         'location': f"{lat},{lng}",
+         'radius': radius,
+         'key': settings.GOOGLE_MAPS_API_KEY
+    }
+
+    response = requests.get(url, params=params)
+    return response.json().get('results', [])[:5]
+
+class PlannerView(View):
+    
+    def get(self, request, *args, **kwargs):
+        data = {
+            'page': 'planner-page',
+            'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
+        }
+        return render(request, 'explore/planner.html', context=data)
+    
+@require_POST
+@csrf_exempt
+def fetch_places(request):
         
-     
+      body = json.loads(request.body)
+
+      city = body.get('city')
+
+      kind = body.get("kind")
+
+      query = f"tourist attractions in {city}" if kind == "attraction"  else f"hotels in {city}"
+
+      params = {
+          "query" : query,
+          "key" : settings.GOOGLE_MAPS_API_KEY,
+          "type" : "tourist_attraction" if kind == "attraction" else "lodging",
+          "fields" :"place_id,name,formatted_address,phpto,geometry"
+
+      }
+
+      res = requests.get(GOOGLE, params=params).json()
+
+      return JsonResponse({"results" : res.get("results", [])})
+        
+@require_POST
+@csrf_exempt
+def build_route(request):
+    try:
+        body = json.loads(request.body)
+        place_ids = body.get("place_ids", [])
+        print("Received place_ids:", place_ids)
+        return JsonResponse({"waypoints": place_ids})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

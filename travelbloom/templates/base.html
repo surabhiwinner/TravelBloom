@@ -85,6 +85,17 @@
                             <a class="nav-link {% if page == 'your-trip-page' %}active{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>
                         </li>
                         {% endif %}
+
+                         {% user_role_checking request 'Admin,User' as allow %}
+                        {% if allow %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'planner-page' %}active{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'planner-trip-page' %}active{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
+                        </li>
+                        {% endif %}
+
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'blog-page' %}active{% endif %}" href="#">Blog</a>
                         </li>
@@ -179,7 +190,9 @@ function toggleChat() {
     chatbox.style.display = chatbox.style.display === "none" ? "block" : "none";
 }
 
-let locationAttached = false;
+let userLat = null;
+let userLng = null;
+let locationFetched = false;
 
 function sendChat() {
     const input = document.getElementById("chat-input");
@@ -195,21 +208,25 @@ function sendChat() {
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
 
-    if (!locationAttached && navigator.geolocation) {
+    // First try to get location (only once per session)
+    if (!locationFetched && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const locationInfo = `Latitude: ${lat.toFixed(4)}, Longitude: ${lon.toFixed(4)}`;
+            userLat = position.coords.latitude;
+            userLng = position.coords.longitude;
+            locationFetched = true;
 
-            // Show toast
-            document.getElementById("toastBody").innerText = `📍 Your location: ${locationInfo}`;
-            const toast = new bootstrap.Toast(document.getElementById("locationToast"));
-            toast.show();
+            // Optional: show toast
+            const locationInfo = `Latitude: ${userLat.toFixed(4)}, Longitude: ${userLng.toFixed(4)}`;
+            const toastBody = document.getElementById("toastBody");
+            if (toastBody) {
+                toastBody.innerText = `📍 Your location: ${locationInfo}`;
+                const toast = new bootstrap.Toast(document.getElementById("locationToast"));
+                toast.show();
+            }
 
-            message += `\nMy location: ${locationInfo}`;
-            locationAttached = true;
             sendMessageToBot(message, csrfToken, messagesDiv);
         }, function(error) {
+            locationFetched = true;
             sendMessageToBot(message, csrfToken, messagesDiv);
         });
     } else {
@@ -217,25 +234,23 @@ function sendChat() {
     }
 }
 
-// ✅ NEW: Trigger send on Enter key
-document.addEventListener("DOMContentLoaded", function () {
-    const input = document.getElementById("chat-input");
-    input.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();  // avoid newline
-            sendChat();
-        }
-    });
-});
-
 function sendMessageToBot(message, csrfToken, messagesDiv) {
+    const formData = new URLSearchParams({
+        message: message
+    });
+
+    if (userLat && userLng) {
+        formData.append('latitude', userLat);
+        formData.append('longitude', userLng);
+    }
+
     fetch("/chatbot/chat/", {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             "X-CSRFToken": csrfToken,
         },
-        body: new URLSearchParams({ message })
+        body: formData
     })
     .then(res => res.json())
     .then(data => {
@@ -247,13 +262,25 @@ function sendMessageToBot(message, csrfToken, messagesDiv) {
             messagesDiv.innerHTML += `<div><strong>Error:</strong> Unknown error occurred.</div>`;
         }
 
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;  // auto scroll
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
     })
     .catch(err => {
         messagesDiv.innerHTML += `<div><strong>Error:</strong> Network error</div>`;
     });
 }
+
+// ✅ Trigger send on Enter key
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("chat-input");
+    input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendChat();
+        }
+    });
+});
 </script>
+
 
 </body>
 </html>

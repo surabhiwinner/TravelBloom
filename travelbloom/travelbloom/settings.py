@@ -155,4 +155,4 @@ OPEN_AI_KEY = config('OPEN_AI_KEY_')
 
 GEMNI_API_KEY = config('GEMNI_KEY_')
 
-
+PLACES_NEW_API = config('PLACES_NEW_API_KEY_')
