@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from django.http import JsonResponse
 
@@ -250,6 +250,18 @@ def render_selected_list(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+
+def calculate_total_distance(place_coords):
+    total = 0.0
+    for i in range(1, len(place_coords)):
+        p1 = place_coords[i - 1]
+        p2 = place_coords[i]
+        dist = haversine(p1["lat"], p1["lng"], p2["lat"], p2["lng"])
+        if dist:
+            total += dist
+    return round(total, 2)
+
+
 @require_POST
 @csrf_exempt
 def save_trip(request):
@@ -265,13 +277,69 @@ def save_trip(request):
         if not city or not place_ids:
             return JsonResponse({"error": "City and place_ids are required."}, status=400)
 
+        # 1. Fetch coordinates of all place_ids
+        details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+        coords = []
+        for pid in place_ids:
+            res = requests.get(details_url, params={
+                "place_id": pid,
+                "key": settings.GOOGLE_MAPS_API_KEY,
+                "fields": "geometry/location"
+            }).json()
+
+            loc = res.get("result", {}).get("geometry", {}).get("location")
+            if loc:
+                coords.append({
+                    "lat": loc["lat"],
+                    "lng": loc["lng"]
+                })
+
+        if len(coords) < 2:
+            return JsonResponse({"error": "Need at least 2 valid locations to calculate distance."}, status=400)
+
+        # 2. Calculate total distance
+        total_distance = calculate_total_distance(coords)
+
+        # 3. Save trip
         trip = Trip.objects.create(
             user=request.user,
             name=name,
             city=city,
-            place_ids=place_ids
+            place_ids=place_ids,
+            distance=total_distance
         )
 
-        return JsonResponse({"status": "success", "trip_id": trip.uuid})
+        return JsonResponse({"status": "success", "trip_id": trip.uuid, "distance": total_distance})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+
+class TripListView(View):
+
+    def get(self, request, *args , **kwargs):
+
+
+        trips = Trip.objects.all()
+
+        data={
+            'trips': trips,
+            'page' : 'your-trip-page'
+        }
+        print(trips)
+
+      
+        return render(request,"explore/trip-list.html", context=data)
+
+
+class TripListDeleteView(View):
+
+    def get(self, request, *args, **kwargs):
+
+        uuid = kwargs.get('uuid')
+
+        trip = Trip.objects.get(uuid=uuid)
+
+        trip.delete()
+
+        return redirect('your-trip')

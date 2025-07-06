@@ -79,7 +79,7 @@
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'diary-page' %}active{% endif %}" href="{% url 'diary-list' %}">Diary</a>
+                            <a class="nav-link {% if page == 'your-trip-page' %}active{% endif %}" href="{% url 'your-trip' %}">Diary</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'your-trip-page' %}active{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>

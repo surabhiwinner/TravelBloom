@@ -9,7 +9,7 @@ urlpatterns = [
     path('save-user-location/', views.save_user_location, name='save_user_location'),
 
     # User's saved trips
-    path('your-trip/', views.YourTripView.as_view(), name='your-trip'),
+    path('your-trip/', views.TripListView.as_view(), name='your-trip'),
 
     # Smart planner page
     path('planner/', views.PlannerView.as_view(), name='planner'),
@@ -23,4 +23,6 @@ urlpatterns = [
     path("planner/list/", views.render_selected_list, name="render_selected_list"),
 
     path("trip/save/", save_trip, name="save_trip"),
+
+    path('trip-delete/<str:uuid>/',views.TripListDeleteView.as_view(),name='trip-delete')
 ]

@@ -1,28 +1,62 @@
 {% extends "base.html" %}
 {% block section %}
 <div class="container py-5">
-  <h2 class="text-center mb-4 display-5 text-primary">📌 Your Saved Trips</h2>
+  <h2 class="text-center mb-5 display-5 fw-bold text-primary">📌 Your Saved Trips</h2>
 
-  <!-- Example Trip List (replace with dynamic later if needed) -->
-  <ul id="saved-trips" class="list-group">
-    <li class="list-group-item" data-ids='["ChIJrTLr-GyuEmsRBfy61i59si0","ChIJLfyY2E4ZejkRPpV-3mhGzjg","ChIJL_P_CXMEDTkRw0ZdG-0GVvw"]'>
-      Trip to Bangalore (3 spots)
-    </li>
-  </ul>
+  {% if trips %}
+    <ul id="saved-trips" class="list-group shadow-sm">
+      {% for trip in trips %}
+        <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center shadow-sm rounded mb-3 px-3"
+            style="cursor: pointer;"
+            data-ids='{{ trip.place_ids|safe }}'>
 
-  <!-- Result Box -->
-  <div class="card shadow-sm mt-4 d-none" id="trip-summary">
+          <!-- Trip Info -->
+          <div>
+            <h5 class="mb-1 text-success fw-semibold">{{ trip.name }}</h5>
+            <small class="text-muted">
+              {{ trip.city }} — {{ trip.place_ids|length }} stop{{ trip.place_ids|length|pluralize }}
+            </small>
+          </div>
+
+          <!-- Right Side: Distance + Delete -->
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-info text-dark rounded-pill px-3 py-2">
+              🚗 {{ trip.distance|default:"0.0" }} km
+            </span>
+
+            <a href="{% url 'trip-delete' trip.uuid %}"
+               class="btn btn-sm btn-outline-danger"
+               title="Delete Trip"
+               onclick="return confirm('Are you sure you want to delete this trip?')">
+              🗑️
+            </a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-warning text-center shadow-sm">
+      You have no saved trips yet.
+    </div>
+  {% endif %}
+
+  <!-- Trip Summary Box -->
+  <div class="card shadow-lg mt-5 d-none" id="trip-summary">
     <div class="card-body">
-      <h4 class="card-title">🗺️ Trip Route Summary</h4>
+      <h4 class="card-title mb-3 text-primary">🗺️ Trip Route Summary</h4>
       <div id="trip-places"></div>
     </div>
   </div>
 </div>
 
+<!-- JavaScript -->
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("#saved-trips li").forEach(li => {
-      li.addEventListener("click", async () => {
+      li.addEventListener("click", async (e) => {
+        // Avoid triggering on delete button click
+        if (e.target.closest('a')) return;
+
         const ids = JSON.parse(li.dataset.ids);
 
         const res = await fetch("{% url 'render_selected_list' %}", {
@@ -33,8 +67,9 @@
 
         const data = await res.json();
         if (res.ok && data.html) {
-          document.getElementById("trip-places").innerHTML = `<ul class="list-unstyled">${data.html}</ul>`;
+          document.getElementById("trip-places").innerHTML = `<ul class="list-unstyled ps-3">${data.html}</ul>`;
           document.getElementById("trip-summary").classList.remove("d-none");
+          window.scrollTo({ top: document.getElementById("trip-summary").offsetTop - 100, behavior: 'smooth' });
         } else {
           alert(data.error || "Could not render trip.");
         }
