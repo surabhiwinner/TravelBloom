@@ -3,144 +3,112 @@
 <div class="container py-5">
   <h2 class="text-center mb-5 display-6 text-primary">🧭 Smart Trip Planner</h2>
 
-  <!-- 🔍 Search Bar -->
+  <!-- Search Bar -->
   <div class="input-group mb-4 shadow-sm">
     <input id="city-input" class="form-control form-control-lg border-end-0" placeholder="Enter a city, e.g. Jaipur">
     <button id="search-btn" class="btn btn-outline-primary px-4">Search</button>
   </div>
 
+  <!-- Hidden fields for autocomplete -->
+  <input type="hidden" id="city-place-id">
+  <input type="hidden" id="city-lat">
+  <input type="hidden" id="city-lng">
+
+  <!-- Results Lists -->
   <div class="row g-4">
-    <!-- Attractions -->
-    <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h4 class="card-title text-success mb-3">🏛️ Must Visit</h4>
-          <div id="attractions" class="list-group small"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Hotels -->
-    <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h4 class="card-title text-info mb-3">🏨 Hotels</h4>
-          <div id="hotels" class="list-group small"></div>
-        </div>
-      </div>
-    </div>
+    <div class="col-md-6"><div class="card shadow-sm"><div class="card-body">
+      <h4 class="text-success">🏛️ Must Visit</h4>
+      <div id="attractions" class="list-group small"></div>
+    </div></div></div>
+    <div class="col-md-6"><div class="card shadow-sm"><div class="card-body">
+      <h4 class="text-info">🏨 Hotels</h4>
+      <div id="hotels" class="list-group small"></div>
+    </div></div></div>
   </div>
 
-  <!-- Route Button -->
-  <div class="text-center mt-4">
-    <button id="route-btn" class="btn btn-lg btn-success px-5 shadow" disabled>
-      🚗 Build Smart Route
-    </button>
+  <!-- Route & Save Buttons -->
+  <div class="text-center my-4">
+    <button id="route-btn" class="btn btn-success btn-lg" disabled>🚗 Build Smart Route</button>
+    <button id="save-trip-btn" class="btn btn-outline-primary ms-3" disabled>💾 Save This Trip</button>
   </div>
 
-  <!-- 🗺️ Route Map -->
-  <div id="route-map" class="mt-5 rounded shadow-sm d-none" style="height: 400px;"></div>
+  <!-- Map & Route List -->
+  <div id="route-map" class="d-none rounded shadow-sm mb-4" style="height: 400px;"></div>
+  <div class="selected-places"></div>
 </div>
 
-<!-- 📦 Bootstrap & Swiper CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
-
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
-<!-- 🗺️ Google Maps JS -->
-<script async defer
-  src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=places,marker&v=beta&callback=initPlanner">
-</script>
-
-<!-- 💡 Custom Script (keep your current script or I can clean it too) -->
-<script>
-/* Your full JavaScript (initPlanner, doSearch, loadPlaces, buildRoute...) goes here */
-</script>
-
+<!-- Styles & Scripts -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=places,marker&callback=initPlanner"></script>
 <style>
-  .list-group-item {
-    border: none;
-    border-bottom: 1px solid #eee;
-    transition: background 0.2s ease;
-  }
-
-  .list-group-item:hover {
-    background: #f9f9f9;
-  }
-
-  .list-group-item img {
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-
-  #route-btn:disabled {
-    opacity: 0.6;
-  }
-
-  #route-map {
-    border-radius: 12px;
-    overflow: hidden;
-  }
+  .list-group-item { border: none; border-bottom: 1px solid #eee; transition: background .2s; }
+  .list-group-item:hover { background: #f9f9f9; }
+  .list-group-item img { border-radius: 8px; width: 80px; object-fit: cover; }
+  #route-btn:disabled { opacity: 0.6; }
+  #route-map { overflow: hidden; }
 </style>
 
-
-
 <script>
-/* ---------- Globals ---------- */
-let selected = new Set();          // chosen place_id’s
-let map, dirSrv, dirRend;
+let selected = new Set();
+let allPlaces = [];
+let map, dirSrv, dirRend, cityAC;
 
-/* ---------- 1. Load Google API callback ---------- */
 function initPlanner() {
+  const input = document.getElementById("city-input");
+  cityAC = new google.maps.places.Autocomplete(input, { types: ["(cities)"] });
+  cityAC.addListener("place_changed", () => {
+    const p = cityAC.getPlace();
+    if (p.geometry) {
+      document.getElementById("city-place-id").value = p.place_id || "";
+      document.getElementById("city-lat").value = p.geometry.location.lat();
+      document.getElementById("city-lng").value = p.geometry.location.lng();
+    }
+  });
+
   document.getElementById("search-btn").onclick = doSearch;
-  document.getElementById("route-btn").onclick  = buildRoute;
+  document.getElementById("route-btn").onclick = buildRoute;
 }
 
-/* ---------- 2. Search city ---------- */
 async function doSearch() {
   const city = document.getElementById("city-input").value.trim();
   if (!city) return;
   selected.clear();
+  allPlaces = [];
   document.getElementById("route-btn").disabled = true;
-  await loadPlaces(city, "attraction");
+  document.getElementById("save-trip-btn").disabled = true;
   await loadPlaces(city, "hotel");
+  await loadPlaces(city, "attraction");
 }
 
 async function loadPlaces(city, kind) {
   const box = kind === "attraction" ? "#attractions" : "#hotels";
   document.querySelector(box).innerHTML = "Loading…";
-
   const res = await fetch("{% url 'fetch_places' %}", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ city, kind })
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({city, kind})
   }).then(r => r.json());
 
-  const html = res.results.map(p => cardHTML(p)).join("");
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const offset = kind === "hotel" ? 0 : 1;
+
+  res.results.forEach(p => { p.kind = kind; allPlaces.push(p); });
+
+  const html = res.results.map((p, i) => {
+    const code = letters[i + offset];
+    const img = p.photos?.[0]?.photo_reference
+      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${p.photos[0].photo_reference}&key={{GOOGLE_MAPS_API_KEY}}`
+      : "https://via.placeholder.com/400x200";
+    const label = `<strong class="me-2 text-primary">(${code})</strong>`;
+    return `
+      <label class="list-group-item d-flex gap-3 align-items-start">
+        <input type="checkbox" value="${p.place_id}" class="form-check-input place-box flex-shrink-0" data-kind="${p.kind}">
+        <img src="${img}">
+        <span>${label}<strong>${p.name}</strong><br><small>${p.formatted_address}</small></span>
+      </label>`;
+  }).join("");
+
   document.querySelector(box).innerHTML = html || "<em>No results</em>";
-  attachCheckboxEvents();
-}
-
-function cardHTML(p) {
-  const photoRef = p.photos?.[0]?.photo_reference;
-  const img = photoRef
-    ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key={{GOOGLE_MAPS_API_KEY}}`
-    : "https://via.placeholder.com/400x200";
-
-  return `
-  <label class="list-group-item d-flex gap-3">
-    <input type="checkbox" value="${p.place_id}"
-           class="form-check-input place-box flex-shrink-0">
-    <img src="${img}" style="width:80px;object-fit:cover">
-    <span>
-      <strong>${p.name}</strong><br>
-      <small>${p.formatted_address}</small>
-    </span>
-  </label>`;
-}
-
-function attachCheckboxEvents() {
   document.querySelectorAll(".place-box").forEach(cb => {
     cb.onchange = () => {
       cb.checked ? selected.add(cb.value) : selected.delete(cb.value);
@@ -149,36 +117,102 @@ function attachCheckboxEvents() {
   });
 }
 
-/* ---------- 3. Build Route ---------- */
-function buildRoute() {
+function renderSelectedList(ids, legs) {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const html = ids.map((pid, i) => {
+    const p = allPlaces.find(o => o.place_id === pid) || {};
+    const icon = p.kind === "hotel" ? "🏨" : "📍";
+    const dist = (i > 0 && legs[i - 1]) ? ` — ${legs[i - 1].distance.text}` : "";
+    return `<li class="mb-2"><strong class="text-primary">(${letters[i]})</strong> ${icon} ${p.name}${dist}</li>`;
+  }).join("");
+  document.querySelector(".selected-places").innerHTML = `
+    <div class="mt-3"><h5 class="fw-bold">🗺️ Route Order</h5><ul class="list-unstyled">${html}</ul></div>`;
+}
+
+async function buildRoute() {
   if (selected.size < 2) return;
-  document.getElementById("route-map").classList.remove("d-none");
-
-  const ids = [...selected];               // origin … destination
-  if (!dirSrv) dirSrv = new google.maps.DirectionsService();
-  if (!dirRend) dirRend = new google.maps.DirectionsRenderer({ suppressMarkers: false });
-
-  map = new google.maps.Map(document.getElementById("route-map"), {
-    zoom: 5, center: { lat: 22, lng: 80 }
+  const hotelFirst = [...selected].sort((a, b) => {
+    const ak = allPlaces.find(x => x.place_id === a)?.kind;
+    const bk = allPlaces.find(x => x.place_id === b)?.kind;
+    return ak === "hotel" && bk !== "hotel" ? -1 : bk === "hotel" && ak !== "hotel" ? 1 : 0;
   });
+
+  const res = await fetch("{% url 'build_route' %}", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ place_ids: hotelFirst })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.waypoints) {
+    alert(data.error || "Could not build route.");
+    return;
+  }
+  const ids = data.waypoints;
+
+  document.getElementById("route-map").classList.remove("d-none");
+  if (!dirSrv) dirSrv = new google.maps.DirectionsService();
+  if (!dirRend) dirRend = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+
+  map = new google.maps.Map(document.getElementById("route-map"), { zoom: 6, center: { lat: 22, lng: 80 } });
   dirRend.setMap(map);
 
-  const waypts = ids.slice(1, -1).map(id => ({
-    location: { placeId: id }, stopover: true
-  }));
+  const waypts = ids.slice(1, -1).map(id => ({ location: { placeId: id }, stopover: true }));
 
-  dirSrv.route(
-    {
-      origin:      { placeId: ids[0] },
-      destination: { placeId: ids[ids.length - 1] },
-      waypoints:   waypts,
-      travelMode:  google.maps.TravelMode.DRIVING
-    },
-    (res, status) => {
-      if (status === "OK") dirRend.setDirections(res);
-      else alert("Directions error: " + status);
+  dirSrv.route({
+    origin:      { placeId: ids[0] },
+    destination: { placeId: ids[ids.length - 1] },
+    waypoints:   waypts,
+    travelMode:  google.maps.TravelMode.DRIVING
+  }, (dirs, status) => {
+    if (status !== "OK") {
+      alert("Directions error: " + status);
+      return;
     }
-  );
+    dirRend.setDirections(dirs);
+    const legs = dirs.routes[0].legs;
+    renderSelectedList(ids, legs);
+
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (window.customMarkers) window.customMarkers.forEach(m => m.setMap(null));
+    window.customMarkers = [];
+    legs.forEach((leg, i) => {
+      const start = new google.maps.Marker({ position: leg.start_location, label: letters[i], map });
+      window.customMarkers.push(start);
+      if (i === legs.length - 1) {
+        const end = new google.maps.Marker({ position: leg.end_location, label: letters[i + 1], map });
+        window.customMarkers.push(end);
+      }
+    });
+
+    document.getElementById("save-trip-btn").disabled = false;
+  });
 }
+
+// Save Trip Handler
+document.getElementById("save-trip-btn").addEventListener("click", async () => {
+  const city = document.getElementById("city-input").value.trim();
+  if (!city || selected.size < 2) return alert("No route to save.");
+
+  const name = prompt("Give this trip a name:", `Trip to ${city}`);
+  if (!name) return;
+
+  const res = await fetch("{% url 'save_trip' %}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name,
+      city,
+      place_ids: [...selected]
+    })
+  });
+
+  const data = await res.json();
+  if (res.ok) {
+    alert("Trip saved! ✅");
+    window.location.href = "{% url 'your-trip' %}";
+  } else {
+    alert("Error: " + (data.error || "could not save trip"));
+  }
+});
 </script>
 {% endblock %}

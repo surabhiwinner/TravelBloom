@@ -45,3 +45,16 @@ class Touristplace(models.Model):
 
 
 # Create your models here.
+
+class Trip(BaseClass):
+    user = models.ForeignKey('authentication.Profile', on_delete=models.CASCADE, related_name="trips")
+    name = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    place_ids = models.JSONField(help_text="List of Google Place IDs in selected order")
+    
+    def __str__(self):
+        return f"{self.name} ({self.city})"
+    
+    class Meta:
+        ordering = ['-created_at']
+

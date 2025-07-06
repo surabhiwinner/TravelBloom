@@ -1,7 +1,45 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block section %}
+<div class="container py-5">
+  <h2 class="text-center mb-4 display-5 text-primary">📌 Your Saved Trips</h2>
 
+  <!-- Example Trip List (replace with dynamic later if needed) -->
+  <ul id="saved-trips" class="list-group">
+    <li class="list-group-item" data-ids='["ChIJrTLr-GyuEmsRBfy61i59si0","ChIJLfyY2E4ZejkRPpV-3mhGzjg","ChIJL_P_CXMEDTkRw0ZdG-0GVvw"]'>
+      Trip to Bangalore (3 spots)
+    </li>
+  </ul>
 
+  <!-- Result Box -->
+  <div class="card shadow-sm mt-4 d-none" id="trip-summary">
+    <div class="card-body">
+      <h4 class="card-title">🗺️ Trip Route Summary</h4>
+      <div id="trip-places"></div>
+    </div>
+  </div>
+</div>
 
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("#saved-trips li").forEach(li => {
+      li.addEventListener("click", async () => {
+        const ids = JSON.parse(li.dataset.ids);
+
+        const res = await fetch("{% url 'render_selected_list' %}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ place_ids: ids })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.html) {
+          document.getElementById("trip-places").innerHTML = `<ul class="list-unstyled">${data.html}</ul>`;
+          document.getElementById("trip-summary").classList.remove("d-none");
+        } else {
+          alert(data.error || "Could not render trip.");
+        }
+      });
+    });
+  });
+</script>
 {% endblock %}

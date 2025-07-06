@@ -12,7 +12,7 @@ import json
 # Create your views here.
 from django.views import View
 
-from .models import Touristplace
+from .models import Touristplace,Trip
 
 from django.conf import settings
 
@@ -23,6 +23,8 @@ import requests
 from django.views.decorators.http import require_POST
 
 import math 
+
+
 
 GOOGLE = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
@@ -115,19 +117,11 @@ def fetch_places(request):
 
       return JsonResponse({"results" : res.get("results", [])})
         
-@require_POST
-@csrf_exempt
-def build_route(request):
-    try:
-        body = json.loads(request.body)
-        place_ids = body.get("place_ids", [])
-        print("Received place_ids:", place_ids)
-        return JsonResponse({"waypoints": place_ids})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
 def haversine(lat1, lon1, lat2, lon2):
-    # Haversine formula to calculate distance between two lat/lng points in km
+    if None in (lat1, lon1, lat2, lon2):
+        return None  # Return None instead of crashing
+
     R = 6371  # Earth radius in kilometers
     dLat = math.radians(lat2 - lat1)
     dLon = math.radians(lon2 - lon1)
@@ -181,5 +175,103 @@ def build_route(request):
 
         return JsonResponse({"waypoints": ordered_ids})
 
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_POST
+@csrf_exempt
+def render_selected_list(request):
+    """
+    POST JSON body:
+        {
+            "place_ids": ["ChI...", "ChI...", ...]   # ordered, hotel first
+        }
+
+    Returns:
+        {
+            "html": "<li>(A) 🏨 Hotel Foo …</li> …"
+        }
+    """
+    try:
+        body = json.loads(request.body)
+        place_ids = body.get("place_ids", [])
+
+        if len(place_ids) < 1:
+            return JsonResponse({"error": "No places supplied."}, status=400)
+
+        # Fetch name & coordinates for each place_id
+        details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+        stops = []
+        for pid in place_ids:
+            res = requests.get(details_url, params={
+                "place_id": pid,
+                "key": settings.GOOGLE_MAPS_API_KEY,
+                "fields": "name,types,geometry/location"
+            }).json()
+            result = res.get("result", {})
+            loc = result.get("geometry", {}).get("location", {})
+            stops.append({
+                "place_id": pid,
+                "name": result.get("name", "Unknown"),
+                "kind": "hotel" if "lodging" in result.get("types", []) else "attraction",
+                "lat": loc.get("lat"),
+                "lng": loc.get("lng"),
+            })
+
+        # Build distances array (km) between consecutive stops
+        distances = [None]  # First item has no previous
+        for i in range(1, len(stops)):
+            lat1, lon1 = stops[i-1].get("lat"), stops[i-1].get("lng")
+            lat2, lon2 = stops[i].get("lat"), stops[i].get("lng")
+
+            if None in (lat1, lon1, lat2, lon2):
+                distances.append(None)
+            else:
+                km = haversine(lat1, lon1, lat2, lon2)
+                distances.append(round(km, 1))
+
+        # Build HTML list
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        lis = []
+        for idx, (s, km) in enumerate(zip(stops, distances)):
+            icon = "🏨" if s["kind"] == "hotel" else "📍"
+            dist_txt = f" — {km} km" if km is not None else ""
+            lis.append(
+                f'<li class="mb-1">'
+                f'<strong class="text-primary">({letters[idx]})</strong> '
+                f'{icon} {s["name"]}{dist_txt}'
+                f'</li>'
+            )
+        html = "".join(lis)
+
+        return JsonResponse({"html": html})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+@require_POST
+@csrf_exempt
+def save_trip(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Login required."}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        name = data.get("name", "My Trip")
+        city = data.get("city")
+        place_ids = data.get("place_ids", [])
+
+        if not city or not place_ids:
+            return JsonResponse({"error": "City and place_ids are required."}, status=400)
+
+        trip = Trip.objects.create(
+            user=request.user,
+            name=name,
+            city=city,
+            place_ids=place_ids
+        )
+
+        return JsonResponse({"status": "success", "trip_id": trip.uuid})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
