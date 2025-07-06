@@ -316,20 +316,35 @@ def save_trip(request):
 
 
 class TripListView(View):
-
-    def get(self, request, *args , **kwargs):
-
-
+    def get(self, request, *args, **kwargs):
         trips = Trip.objects.all()
-
-        data={
-            'trips': trips,
-            'page' : 'your-trip-page'
-        }
-        print(trips)
-
-      
-        return render(request,"explore/trip-list.html", context=data)
+        grouped_trips = [
+            {
+                "status": "Planning",
+                "label": "Planned",
+                "icon": "📝",
+                "color": "info",
+                "trips": trips.filter(status="Planning")
+            },
+            {
+                "status": "Ongoing",
+                "label": "On Going",
+                "icon": "🚀",
+                "color": "warning",
+                "trips": trips.filter(status="Ongoing")
+            },
+            {
+                "status": "Completed",
+                "label": "Completed",
+                "icon": "✅",
+                "color": "success",
+                "trips": trips.filter(status="Completed")
+            }
+        ]
+        return render(request, "explore/trip-list.html", {
+            "grouped_trips": grouped_trips,
+            "page": "your-trip-page"
+        })
 
 
 class TripListDeleteView(View):

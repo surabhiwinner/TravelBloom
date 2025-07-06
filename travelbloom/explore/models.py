@@ -31,11 +31,11 @@ class Touristplace(models.Model):
         ordering = ['id']
 
 
-# class TripStatusChoices(models.TextChoices):
+class TripStatusChoices(models.TextChoices):
 
-#     PLANNING =   "Planning", "Planning"
-#     ON_GOING = "Ongoing", "Ongoing",
-#     COMPLETED = "Completed", "Completed"
+    PLANNING =   "Planning", "Planning"
+    ON_GOING = "Ongoing", "Ongoing",
+    COMPLETED = "Completed", "Completed"
     
 
 class Trip(BaseClass):
@@ -43,7 +43,7 @@ class Trip(BaseClass):
     name = models.CharField(max_length=255)
     distance = models.FloatField()
     city = models.CharField(max_length=100)
-    # status = models.CharField(max_length=10,choices=TripStatusChoices.choices,default=TripStatusChoices.PLANNING)
+    status = models.CharField(max_length=10,choices=TripStatusChoices.choices,default=TripStatusChoices.PLANNING)
     place_ids = models.JSONField(help_text="List of Google Place IDs in selected order")
 
     def __str__(self):
