@@ -3,18 +3,18 @@
 <div class="container py-5">
   <h2 class="text-center mb-5 display-6 text-primary">🧭 Smart Trip Planner</h2>
 
-  <!-- Search Bar -->
+  <!-- 🔎 Search -->
   <div class="input-group mb-4 shadow-sm">
     <input id="city-input" class="form-control form-control-lg border-end-0" placeholder="Enter a city, e.g. Jaipur">
     <button id="search-btn" class="btn btn-outline-primary px-4">Search</button>
   </div>
 
-  <!-- Hidden fields -->
+  <!-- Hidden -->
   <input type="hidden" id="city-place-id">
   <input type="hidden" id="city-lat">
   <input type="hidden" id="city-lng">
 
-  <!-- Results Lists -->
+  <!-- 📋 Results -->
   <div class="row g-4 row-cols-1 row-cols-md-3">
     <!-- Attractions -->
     <div class="col">
@@ -45,7 +45,7 @@
     </div>
   </div>
 
-  <!-- Buttons -->
+  <!-- 🚗 Buttons -->
   <div class="text-center my-4">
     <button id="route-btn" class="btn btn-success btn-lg" disabled>
       <span class="spinner-border spinner-border-sm d-none"></span>
@@ -54,11 +54,12 @@
     <button id="save-trip-btn" class="btn btn-outline-primary ms-3" disabled>💾 Save This Trip</button>
   </div>
 
-  <!-- Map + Route List -->
+  <!-- 🗺️ Map & List -->
   <div id="route-map" class="d-none rounded shadow-sm mb-4" style="height: 400px;"></div>
   <div class="selected-places"></div>
 </div>
 
+<!-- Bootstrap & Maps -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=places,marker&callback=initPlanner"></script>
 
@@ -73,11 +74,13 @@
 </style>
 
 <script>
+/* ---------- Globals ---------- */
 let selected = new Set();
 let allPlaces = [];
 let map, dirSrv, dirRend, cityAC;
 let isRouting = false;
 
+/* ---------- Init ---------- */
 function initPlanner() {
   const input = document.getElementById("city-input");
   cityAC = new google.maps.places.Autocomplete(input, { types: ["(cities)"] });
@@ -91,188 +94,180 @@ function initPlanner() {
   });
 
   document.getElementById("search-btn").onclick = doSearch;
-  input.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      document.getElementById("search-btn").click();
-    }
-  });
-
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doSearch(); }});
   document.getElementById("route-btn").onclick = buildRoute;
 }
 
+/* ---------- Search ---------- */
 async function doSearch() {
   const city = document.getElementById("city-input").value.trim();
   if (!city) return alert("Please enter a city.");
-  selected.clear();
-  allPlaces = [];
+
+  // reset UI & state
+  selected.clear(); allPlaces = [];
+  ["#attractions","#hotels","#travelpoints"].forEach(sel => document.querySelector(sel).innerHTML = "");
   document.getElementById("route-btn").disabled = true;
   document.getElementById("save-trip-btn").disabled = true;
-  document.querySelector("#attractions").innerHTML = "";
-  document.querySelector("#hotels").innerHTML = "";
-  document.querySelector("#travelpoints").innerHTML = "";
 
+  // parallel fetches
   await Promise.all([
-    loadPlaces(city, "attraction"),
-    loadPlaces(city, "hotel"),
-    loadPlaces(city, "travel")
+    loadPlaces(city,"attraction"),
+    loadPlaces(city,"hotel"),
+    loadPlaces(city,"bus_station"),
+    loadPlaces(city,"train_station"),
+    loadPlaces(city,"airport"),
+    // loadPlaces(city,"metro_station")
   ]);
 }
 
+/* ---------- Load a category ---------- */
 async function loadPlaces(city, kind) {
-  const box = kind === "hotel" ? "#hotels" : kind === "attraction" ? "#attractions" : "#travelpoints";
-  document.querySelector(box).innerHTML = "Loading…";
+  const box = (kind === "hotel") ? "#hotels" : (kind === "attraction") ? "#attractions" : "#travelpoints";
+  if (!document.querySelector(box).dataset.loaded) {          // show once
+    document.querySelector(box).innerHTML = "Loading…";
+    document.querySelector(box).dataset.loaded = "yes";
+  }
+
   const res = await fetch("{% url 'fetch_places' %}", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ city, kind })
   }).then(r => r.json());
 
+  // build cards
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  res.results.forEach(p => { p.kind = kind; allPlaces.push(p); });
-
-  const html = res.results.map((p, i) => {
-    const code = letters[i % 26];
+  const currIndex = document.querySelector(box).querySelectorAll("label.list-group-item").length;
+  res.results.forEach((p,i) => {
+    p.kind = kind;                // keep track
+    allPlaces.push(p);
+    const code = letters[(currIndex+i)%26];
     const img = p.photos?.[0]?.photo_reference
       ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${p.photos[0].photo_reference}&key={{GOOGLE_MAPS_API_KEY}}`
       : "https://via.placeholder.com/200x100";
+
     const label = `<strong class="me-2 text-primary">(${code})</strong>`;
-    return `
+    const html = `
       <label class="list-group-item d-flex gap-3 align-items-start">
         <input type="checkbox" value="${p.place_id}" class="form-check-input place-box flex-shrink-0" data-kind="${p.kind}">
         <img src="${img}">
         <span>${label}<strong>${p.name}</strong><br><small>${p.formatted_address}</small></span>
       </label>`;
-  }).join("");
+    document.querySelector(box).insertAdjacentHTML("beforeend", html);
+  });
 
-  document.querySelector(box).innerHTML = html || "<em>No results</em>";
-  document.querySelectorAll(".place-box").forEach(cb => {
-    cb.onchange = () => {
-      cb.checked ? selected.add(cb.value) : selected.delete(cb.value);
-      document.getElementById("route-btn").disabled = selected.size < 2;
-    };
+  // remove temporary “Loading…”
+  if (document.querySelector(box).innerHTML.startsWith("Loading")) {
+    document.querySelector(box).innerHTML = document.querySelector(box).innerHTML.replace("Loading…","");
+  }
+
+  // hook checkboxes
+  document.querySelectorAll(".place-box").forEach(cb => cb.onchange = () => {
+    cb.checked ? selected.add(cb.value) : selected.delete(cb.value);
+    document.getElementById("route-btn").disabled = selected.size < 2;
   });
 }
 
+/* ---------- Helpers ---------- */
 function toggleRouteBtn(state) {
-  const btn  = document.getElementById("route-btn");
+  const btn = document.getElementById("route-btn");
   const spin = btn.querySelector(".spinner-border");
-  if (state === "busy") {
-    btn.disabled = true;
-    spin.classList.remove("d-none");
-  } else {
-    btn.disabled = selected.size < 2;
-    spin.classList.add("d-none");
-  }
+  if (state === "busy") { btn.disabled = true; spin.classList.remove("d-none"); }
+  else { btn.disabled = selected.size < 2; spin.classList.add("d-none"); }
 }
 
 function ensureMap() {
   if (!map) {
-    map     = new google.maps.Map(document.getElementById("route-map"), { zoom: 6, center: { lat: 22, lng: 80 } });
+    map = new google.maps.Map(document.getElementById("route-map"), { zoom: 6, center: { lat: 22, lng: 80 }});
     dirSrv  = new google.maps.DirectionsService();
     dirRend = new google.maps.DirectionsRenderer({ suppressMarkers: true });
     dirRend.setMap(map);
   }
 }
 
+/* ---------- Build route ---------- */
 async function buildRoute() {
   if (isRouting || selected.size < 2) return;
-  isRouting = true;
-  toggleRouteBtn("busy");
+  isRouting = true; toggleRouteBtn("busy");
 
   try {
-    const hotelFirst = [...selected].sort((a, b) => {
-      const ak = allPlaces.find(x => x.place_id === a)?.kind;
-      const bk = allPlaces.find(x => x.place_id === b)?.kind;
-      return ak === "hotel" && bk !== "hotel" ? -1 : bk === "hotel" && ak !== "hotel" ? 1 : 0;
+    // ensure hotel first if selected
+    const ordered = [...selected].sort((a,b) => {
+      const ak = allPlaces.find(x=>x.place_id===a)?.kind;
+      const bk = allPlaces.find(x=>x.place_id===b)?.kind;
+      return (ak==="hotel"&&bk!=="hotel") ? -1 : (bk==="hotel"&&ak!=="hotel") ? 1 : 0;
     });
 
-    const res = await fetch("{% url 'build_route' %}", {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ place_ids: hotelFirst })
-    });
-    const data = await res.json();
-    if (!res.ok || !data.waypoints) throw new Error(data.error || "Could not build route");
+    const data = await fetch("{% url 'build_route' %}", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json"},
+      body:JSON.stringify({ place_ids: ordered })
+    }).then(r=>r.json());
+
+    if (!data.waypoints) throw new Error(data.error || "Could not build route");
 
     const ids = data.waypoints;
     document.getElementById("route-map").classList.remove("d-none");
     ensureMap();
 
-    const waypts = ids.slice(1, -1).map(id => ({ location: { placeId: id }, stopover: true }));
+    const waypts = ids.slice(1,-1).map(id=>({location:{placeId:id},stopover:true}));
     dirSrv.route({
-      origin: { placeId: ids[0] },
-      destination: { placeId: ids[ids.length - 1] },
-      waypoints: waypts,
-      travelMode: google.maps.TravelMode.DRIVING
-    }, (dirs, status) => {
-      if (status !== "OK") {
-        alert("Directions error: " + status);
-        toggleRouteBtn("idle");
-        isRouting = false;
-        return;
-      }
+      origin:{placeId:ids[0]},
+      destination:{placeId:ids[ids.length-1]},
+      waypoints:waypts,
+      travelMode:google.maps.TravelMode.DRIVING
+    }, (dirs,status)=>{
+      if(status!=="OK"){ alert("Directions error: "+status); toggleRouteBtn("idle"); isRouting=false; return;}
       dirRend.setDirections(dirs);
-      const legs = dirs.routes[0].legs;
-      renderSelectedList(ids, legs);
-
-      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      if (window.customMarkers) window.customMarkers.forEach(m => m.setMap(null));
-      window.customMarkers = [];
-      legs.forEach((leg, i) => {
-        const start = new google.maps.Marker({ position: leg.start_location, label: letters[i], map });
+      renderSelectedList(ids, dirs.routes[0].legs);
+      // custom markers
+      const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      if(window.customMarkers) window.customMarkers.forEach(m=>m.setMap(null));
+      window.customMarkers=[];
+      dirs.routes[0].legs.forEach((leg,i)=>{
+        const start=new google.maps.Marker({position:leg.start_location,label:letters[i],map});
         window.customMarkers.push(start);
-        if (i === legs.length - 1) {
-          const end = new google.maps.Marker({ position: leg.end_location, label: letters[i + 1], map });
+        if(i===dirs.routes[0].legs.length-1){
+          const end=new google.maps.Marker({position:leg.end_location,label:letters[i+1],map});
           window.customMarkers.push(end);
         }
       });
-
-      document.getElementById("save-trip-btn").disabled = false;
-      toggleRouteBtn("idle");
-      isRouting = false;
+      document.getElementById("save-trip-btn").disabled=false;
+      toggleRouteBtn("idle"); isRouting=false;
     });
-  } catch (err) {
-    alert(err.message);
-    toggleRouteBtn("idle");
-    isRouting = false;
-  }
+  } catch(e){ alert(e.message); toggleRouteBtn("idle"); isRouting=false; }
 }
 
+/* ---------- Render Selected List ---------- */
 function renderSelectedList(ids, legs) {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const html = ids.map((pid, i) => {
-    const p = allPlaces.find(o => o.place_id === pid) || {};
-    const icon = p.kind === "hotel" ? "🏨" : p.kind === "travel" ? "🚉" : "📍";
-    const dist = (i > 0 && legs[i - 1]) ? ` — ${legs[i - 1].distance.text}` : "";
+  const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const html = ids.map((pid,i)=>{
+    const p = allPlaces.find(o=>o.place_id===pid) || {};
+    const icon = (p.kind==="hotel")          ? "🏨"
+               : (p.kind==="bus_station")    ? "🚌"
+               : (p.kind==="train_station")  ? "🚉"
+               : (p.kind==="airport")        ? "✈️"
+               : (p.kind==="metro_station")  ? "🚇"
+               : "📍";
+    const dist=(i>0&&legs[i-1]) ? ` — ${legs[i-1].distance.text}` : "";
     return `<li class="mb-2"><strong class="text-primary">(${letters[i]})</strong> ${icon} ${p.name}${dist}</li>`;
   }).join("");
-  document.querySelector(".selected-places").innerHTML = `
-    <div class="mt-3"><h5 class="fw-bold">🗺️ Route Order</h5><ul class="list-unstyled">${html}</ul></div>`;
+  document.querySelector(".selected-places").innerHTML =
+    `<div class="mt-3"><h5 class="fw-bold">🗺️ Route Order</h5><ul class="list-unstyled">${html}</ul></div>`;
 }
 
-// Save trip
-
-document.getElementById("save-trip-btn").addEventListener("click", async () => {
-  const city = document.getElementById("city-input").value.trim();
-  if (!city || selected.size < 2) return alert("No route to save.");
-
-  const name = prompt("Give this trip a name:", `Trip to ${city}`);
-  if (!name) return;
-
-  const res = await fetch("{% url 'save_trip' %}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, city, place_ids: [...selected] })
+/* ---------- Save trip ---------- */
+document.getElementById("save-trip-btn").addEventListener("click", async()=>{
+  const city=document.getElementById("city-input").value.trim();
+  if(!city||selected.size<2) return alert("No route to save.");
+  const name=prompt("Give this trip a name:",`Trip to ${city}`);
+  if(!name) return;
+  const res=await fetch("{% url 'save_trip' %}",{
+    method:"POST", headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({ name, city, place_ids:[...selected] })
   });
-
-  const data = await res.json();
-  if (res.ok) {
-    alert("Trip saved! ✅");
-    window.location.href = "{% url 'your-trip' %}";
-  } else {
-    alert("Error: " + (data.error || "could not save trip"));
-  }
+  const data=await res.json();
+  if(res.ok){ alert("Trip saved! ✅"); window.location.href="{% url 'your-trip' %}"; }
+  else      { alert("Error: "+(data.error||"could not save trip")); }
 });
 </script>
 {% endblock %}
