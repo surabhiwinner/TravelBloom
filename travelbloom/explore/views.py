@@ -28,8 +28,6 @@ import math
 
 GOOGLE = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
-GOOGLE_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-
 def map_view(request):
 
         places = Touristplace.objects.all()
@@ -65,8 +63,26 @@ def save_user_location(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An internal server error occurred: {str(e)}'}, status=500)
 
-  
+class YourTripView(View):
+     
+     def get(self, request, *args,**kwargs):
 
+        data ={
+                 'page' : 'your-trip-page'
+            }
+        return render(request, 'explore/trip-list.html',context=data)  
+
+def get_nearby_places(lat,lng,keyword=None, radius=5000):
+   
+    url= "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    params = {
+         'location': f"{lat},{lng}",
+         'radius': radius,
+         'key': settings.GOOGLE_MAPS_API_KEY
+    }
+
+    response = requests.get(url, params=params)
+    return response.json().get('results', [])[:5]
 
 class PlannerView(View):
     
@@ -76,62 +92,43 @@ class PlannerView(View):
             'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
         }
         return render(request, 'explore/planner.html', context=data)
-
-UNWANTED_KEYWORDS = ["gym", "fitness", "lab","stop", "hospital", "clinic", "pharmacy"]
-WANTED_TYPES = {
-    "bus_station": ["bus_station"],
-    "train_station": ["train_station"],
-    "airport": [" international airport"],
-    "metro_station": ["subway_station"],
-}
-
-def is_relevant_place(place, kind):
-    name = place.get("name", "").lower()
-    types = place.get("types", [])
-    if any(bad in name for bad in UNWANTED_KEYWORDS):
-        return False
-    if kind in WANTED_TYPES:
-        return any(t in types for t in WANTED_TYPES[kind])
-    return True
-
+    
 @require_POST
 @csrf_exempt
 def fetch_places(request):
-    data = json.loads(request.body)
-    city = data.get("city")
-    kind = data.get("kind")
-    lat = data.get("lat")
-    lng = data.get("lng")
-
-    api_key = settings.GOOGLE_MAPS_API_KEY
-
     try:
-        if lat and lng:
-            # Use Nearby Search for transport points
-            url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-            params = {
-                "location": f"{lat},{lng}",
-                "radius": 8000,
-                "type": kind,
-                "key": api_key,
-            }
-        else:
-            # Use Text Search for other types
-            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json"
-            query = f"{kind} in {city}"
-            params = {
-                "query": query,
-                "key": api_key,
-            }
+        body = json.loads(request.body)
 
-        response = requests.get(url, params=params)
-        results = response.json().get("results", [])
+        city = body.get('city')
+        kind = body.get("kind")
 
-        # 🧹 Filter results using helper
-        filtered_results = [p for p in results if is_relevant_place(p, kind)]
+        # Fallback and validation
+        if not city or not kind:
+            return JsonResponse({"error": "City and kind are required."}, status=400)
 
-        return JsonResponse({"results": filtered_results})
-    
+        kind_map = {
+            "attraction": ("tourist attractions", "tourist_attraction"),
+            "hotel": ("hotels", "lodging"),
+            "bus_station": ("bus stand", "bus_stand"),
+            "train_station": ("railway station", "railway_station"),
+            "airport": ("airport", "airport"),
+            "seaport": ("seaport", None)  # No 'seaport' type in Google API
+        }
+
+        label, place_type = kind_map.get(kind, (kind, None))
+
+        params = {
+            "query": f"{label} in {city}",
+            "key": settings.GOOGLE_MAPS_API_KEY
+        }
+
+        if place_type:
+            params["type"] = place_type
+
+        res = requests.get(GOOGLE, params=params).json()
+
+        return JsonResponse({"results": res.get("results", [])})
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
             
@@ -333,6 +330,7 @@ def save_trip(request):
         return JsonResponse({"status": "success", "trip_id": trip.uuid, "distance": total_distance})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 class TripListView(View):
