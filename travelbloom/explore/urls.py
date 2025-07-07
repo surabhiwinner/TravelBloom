@@ -24,5 +24,10 @@ urlpatterns = [
 
     path("trip/save/", save_trip, name="save_trip"),
 
-    path('trip-delete/<str:uuid>/',views.TripListDeleteView.as_view(),name='trip-delete')
+    path('trip-delete/<str:uuid>/',views.TripListDeleteView.as_view(),name='trip-delete'),
+
+    path('start-trip/<str:uuid>/',views.TripStartView.as_view(), name= 'start-trip'),
+
+    path('trip-complete/',views.TripCompleteView.as_view(), name= "complete-trip"),
+
 ]

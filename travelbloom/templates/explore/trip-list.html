@@ -15,7 +15,11 @@
           {% for trip in group.trips %}
           <li class="list-group-item d-flex justify-content-between align-items-center trip-item"
               style="cursor: pointer;"
-              data-ids='{{ trip.place_ids|safe }}'>
+              data-ids='{{ trip.place_ids|safe }}'
+              data-uuid="{{ trip.uuid }}"
+              data-status="{{ group.status }}"
+              data-final-lat="{{ trip.final_lat }}"
+              data-final-lng="{{ trip.final_lng }}">
             <div>
               <h6 class="mb-1 text-success">{{ trip.name }}</h6>
               <small class="text-muted">{{ trip.city }} — {{ trip.place_ids|length }} stop{{ trip.place_ids|length|pluralize }}</small>
@@ -24,6 +28,17 @@
               <span class="badge bg-{{ group.color }} text-dark rounded-pill px-3 py-2">
                 🚗 {{ trip.distance|default:"0.0" }} km
               </span>
+              {% if group.status == "Planning" %}
+              <form method="post" action="{% url 'start-trip' trip.uuid %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-sm btn-outline-success"
+                        title="Start Trip"
+                        onclick="return confirm('Start this trip now?')">
+                  🚀
+                </button>
+              </form>
+              {% endif %}
               <a href="{% url 'trip-delete' trip.uuid %}"
                  class="btn btn-sm btn-outline-danger"
                  title="Delete Trip"
@@ -46,39 +61,73 @@
   </div>
   {% endif %}
 
-  <!-- Trip Summary Box -->
   <div class="card shadow-lg mt-5 d-none" id="trip-summary">
     <div class="card-body">
-      <h4 class="card-title mb-3 text-primary">🗺️ Trip Route Summary</h4>
+      <h4 class="card-title mb-3 text-primary">🗸️ Trip Route Summary</h4>
       <div id="trip-places"></div>
     </div>
   </div>
 </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".trip-item").forEach(li => {
-      li.addEventListener("click", async (e) => {
-        if (e.target.closest('a')) return;
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
 
-        const ids = JSON.parse(li.dataset.ids);
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".trip-item").forEach(li => {
+    li.addEventListener("click", async (e) => {
+      if (e.target.closest('a') || e.target.closest('form')) return;
+      const ids = JSON.parse(li.dataset.ids);
+      const res = await fetch("{% url 'render_selected_list' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ place_ids: ids })
+      });
+      const data = await res.json();
+      if (res.ok && data.html) {
+        document.getElementById("trip-places").innerHTML =
+          `<ul class="list-unstyled ps-3">${data.html}</ul>`;
+        document.getElementById("trip-summary").classList.remove("d-none");
+        window.scrollTo({ top: document.getElementById("trip-summary").offsetTop - 100, behavior: 'smooth' });
+      } else {
+        alert(data.error || "Could not render trip.");
+      }
+    });
+  });
 
-        const res = await fetch("{% url 'render_selected_list' %}", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ place_ids: ids })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.html) {
-          document.getElementById("trip-places").innerHTML = `<ul class="list-unstyled ps-3">${data.html}</ul>`;
-          document.getElementById("trip-summary").classList.remove("d-none");
-          window.scrollTo({ top: document.getElementById("trip-summary").offsetTop - 100, behavior: 'smooth' });
-        } else {
-          alert(data.error || "Could not render trip.");
+  if ("geolocation" in navigator) {
+    navigator.geolocation.watchPosition((pos) => {
+      const userLat = pos.coords.latitude;
+      const userLng = pos.coords.longitude;
+      document.querySelectorAll(".trip-item").forEach(async (item) => {
+        const finalLat = item.dataset.finalLat;
+        const finalLng = item.dataset.finalLng;
+        const uuid = item.dataset.uuid;
+        const status = item.dataset.status;
+        if (status === "Ongoing" && finalLat && finalLng) {
+          const dist = haversine(userLat, userLng, parseFloat(finalLat), parseFloat(finalLng));
+          if (dist < 0.5) {
+            const res = await fetch("{% url 'complete-trip' %}", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ uuid: uuid })
+            });
+            if (res.ok) {
+              window.location.reload();
+            }
+          }
         }
       });
     });
-  });
+  }
+});
 </script>
 {% endblock %}

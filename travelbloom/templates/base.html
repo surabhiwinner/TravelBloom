@@ -76,14 +76,23 @@
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'map-page' %}active{% endif %}" href="{% url 'map' %}">Map</a>
                         </li>
+
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'your-trip-page' %}active{% endif %}" href="{% url 'your-trip' %}">Diary</a>
+                            <a class="nav-link {% if page == 'diary-page' %}active{% endif %}" href="{% url 'diary-list' %}">Diary</a>
                         </li>
+                        
+                        {% endif %}
+
+
+
+                        {% user_role_checking request 'Admin,User' as allow %}
+                        {% if allow %}
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'your-trip-page' %}active{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>
                         </li>
+                        
                         {% endif %}
 
                          {% user_role_checking request 'Admin,User' as allow %}
@@ -91,9 +100,7 @@
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'planner-page' %}active{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if page == 'planner-trip-page' %}active{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
-                        </li>
+                       
                         {% endif %}
 
                         <li class="nav-item">

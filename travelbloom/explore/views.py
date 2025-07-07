@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 from django.http import JsonResponse
 
@@ -96,27 +96,42 @@ class PlannerView(View):
 @require_POST
 @csrf_exempt
 def fetch_places(request):
-        
-      body = json.loads(request.body)
+    try:
+        body = json.loads(request.body)
 
-      city = body.get('city')
+        city = body.get('city')
+        kind = body.get("kind")
 
-      kind = body.get("kind")
+        # Fallback and validation
+        if not city or not kind:
+            return JsonResponse({"error": "City and kind are required."}, status=400)
 
-      query = f"tourist attractions in {city}" if kind == "attraction"  else f"hotels in {city}"
+        kind_map = {
+            "attraction": ("tourist attractions", "tourist_attraction"),
+            "hotel": ("hotels", "lodging"),
+            "bus_station": ("bus stand", "bus_stand"),
+            "train_station": ("railway station", "railway_station"),
+            "airport": ("airport", "airport"),
+            "seaport": ("seaport", None)  # No 'seaport' type in Google API
+        }
 
-      params = {
-          "query" : query,
-          "key" : settings.GOOGLE_MAPS_API_KEY,
-          "type" : "tourist_attraction" if kind == "attraction" else "lodging",
-          "fields" :"place_id,name,formatted_address,phpto,geometry"
+        label, place_type = kind_map.get(kind, (kind, None))
 
-      }
+        params = {
+            "query": f"{label} in {city}",
+            "key": settings.GOOGLE_MAPS_API_KEY
+        }
 
-      res = requests.get(GOOGLE, params=params).json()
+        if place_type:
+            params["type"] = place_type
 
-      return JsonResponse({"results" : res.get("results", [])})
-        
+        res = requests.get(GOOGLE, params=params).json()
+
+        return JsonResponse({"results": res.get("results", [])})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+            
 
 def haversine(lat1, lon1, lat2, lon2):
     if None in (lat1, lon1, lat2, lon2):
@@ -306,7 +321,10 @@ def save_trip(request):
             name=name,
             city=city,
             place_ids=place_ids,
-            distance=total_distance
+            distance=total_distance,
+            final_lat=coords[-1]["lat"],     
+            final_lng=coords[-1]["lng"],
+
         )
 
         return JsonResponse({"status": "success", "trip_id": trip.uuid, "distance": total_distance})
@@ -358,3 +376,38 @@ class TripListDeleteView(View):
         trip.delete()
 
         return redirect('your-trip')
+
+
+class TripStartView(View):
+
+    def post(self, request, *args, **kwargs):
+
+        uuid = kwargs.get('uuid')
+
+        trip = get_object_or_404(Trip, uuid=uuid, status='Planning')
+
+        if trip.status == 'Planning' :
+
+            trip.status = 'Ongoing'
+
+            trip.save(update_fields=["status"])
+
+            return redirect('your-trip')
+
+@method_decorator(csrf_exempt,name='dispatch')       
+class TripCompleteView(View):
+
+    def post(self, request, *args, **kwargs):
+
+        data = json.loads(request.body)
+
+        uuid = data.get('uuid')
+
+        trip = get_object_or_404(Trip, uuid=uuid)
+
+        trip.status = "Completed"
+
+        trip.save()
+
+        return JsonResponse({'success' :True })
+
