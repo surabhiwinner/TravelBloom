@@ -49,7 +49,8 @@ class Trip(BaseClass):
     final_place_lng = models.FloatField(null=True, blank=True)
     visited_places = models.JSONField(default=list, blank=True)
 
-
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return f"{self.name} ({self.city})"
 

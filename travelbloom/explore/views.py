@@ -23,8 +23,9 @@ import requests
 from django.views.decorators.http import require_POST
 
 import math 
+import pytz
 
-
+from django.utils.timezone import now,localtime
 
 GOOGLE = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
@@ -376,6 +377,7 @@ class TripListView(View):
     def get(self, request, *args, **kwargs):
         trips = Trip.objects.filter(user=request.user)
 
+        IST =pytz.timezone("Asia/Kolkata")
         grouped_trips = [
             {
                 "status": "Planning",
@@ -399,6 +401,16 @@ class TripListView(View):
                 "trips": trips.filter(status="Completed")
             }
         ]
+
+          # ✅ Format dates to IST and attach to each trip
+        for group in grouped_trips:
+            for trip in group["trips"]:
+                trip.created_ist = localtime(trip.created_at, IST).strftime('%d-%m-%Y %I:%M %p') if trip.created_at else ''
+                trip.started_ist = localtime(trip.started_at, IST).strftime('%d-%m-%Y %I:%M %p') if trip.started_at else ''
+                trip.completed_ist = localtime(trip.completed_at, IST).strftime('%d-%m-%Y %I:%M %p') if trip.completed_at else ''
+
+
+
         return render(request, "explore/trip-list.html", {
             "grouped_trips": grouped_trips,
             "page": "your-trip-page"
@@ -430,7 +442,9 @@ class TripStartView(View):
 
             trip.status = 'Ongoing'
 
-            trip.save(update_fields=["status"])
+            trip.started_at = now()
+
+            trip.save(update_fields=["status", "started_at"])
 
             return redirect('your-trip')
 
@@ -446,6 +460,8 @@ class TripCompleteView(View):
         trip = get_object_or_404(Trip, uuid=uuid)
 
         trip.status = "Completed"
+
+        trip.completed_at = now()
 
         trip.save()
 
