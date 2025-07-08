@@ -87,6 +87,15 @@
 
 
 
+                         {% user_role_checking request 'Admin,User' as allow %}
+                        {% if allow %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'planner-page' %}active{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
+                        </li>
+                       
+                        {% endif %}
+
+
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
@@ -95,13 +104,7 @@
                         
                         {% endif %}
 
-                         {% user_role_checking request 'Admin,User' as allow %}
-                        {% if allow %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if page == 'planner-page' %}active{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
-                        </li>
-                       
-                        {% endif %}
+                        
 
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'blog-page' %}active{% endif %}" href="#">Blog</a>

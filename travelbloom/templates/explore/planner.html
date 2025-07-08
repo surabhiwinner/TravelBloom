@@ -16,7 +16,6 @@
 
   <!-- 📋 Results -->
   <div class="row g-4 row-cols-1 row-cols-md-3">
-    <!-- Attractions -->
     <div class="col">
       <div class="card shadow-sm h-100">
         <div class="card-body">
@@ -25,7 +24,6 @@
         </div>
       </div>
     </div>
-    <!-- Hotels -->
     <div class="col">
       <div class="card shadow-sm h-100">
         <div class="card-body">
@@ -34,7 +32,6 @@
         </div>
       </div>
     </div>
-    <!-- Travel Points -->
     <div class="col">
       <div class="card shadow-sm h-100">
         <div class="card-body">
@@ -59,10 +56,7 @@
   <div class="selected-places"></div>
 </div>
 
-<!-- Bootstrap & Maps -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<script async defer src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=places,marker&callback=initPlanner"></script>
-
+<!-- Styles -->
 <style>
   .list-group-item { border: none; border-bottom: 1px solid #eee; transition: background .2s; }
   .list-group-item:hover { background: #f9f9f9; }
@@ -70,17 +64,18 @@
   #route-btn { position: relative; min-width: 230px; }
   #route-btn[disabled] { opacity: 0.7; pointer-events: none; }
   .spinner-border { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); }
-  #route-map { overflow: hidden; }
 </style>
 
+<!-- ✅ Google Maps API -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places,marker"></script>
+
+<!-- ✅ Planner Script -->
 <script>
-/* ---------- Globals ---------- */
 let selected = new Set();
 let allPlaces = [];
 let map, dirSrv, dirRend, cityAC;
 let isRouting = false;
 
-/* ---------- Init ---------- */
 function initPlanner() {
   const input = document.getElementById("city-input");
   cityAC = new google.maps.places.Autocomplete(input, { types: ["(cities)"] });
@@ -98,34 +93,35 @@ function initPlanner() {
   document.getElementById("route-btn").onclick = buildRoute;
 }
 
-/* ---------- Search ---------- */
 async function doSearch() {
   const city = document.getElementById("city-input").value.trim();
   if (!city) return alert("Please enter a city.");
 
-  // reset UI & state
   selected.clear(); allPlaces = [];
-  ["#attractions","#hotels","#travelpoints"].forEach(sel => document.querySelector(sel).innerHTML = "");
+  ["#attractions", "#hotels", "#travelpoints"].forEach(sel => {
+    document.querySelector(sel).innerHTML = "";
+    document.querySelector(sel).removeAttribute("data-loaded");
+  });
+
   document.getElementById("route-btn").disabled = true;
   document.getElementById("save-trip-btn").disabled = true;
 
-  // parallel fetches
   await Promise.all([
-    loadPlaces(city,"attraction"),
-    loadPlaces(city,"hotel"),
-    loadPlaces(city,"bus_station"),
-    loadPlaces(city,"train_station"),
-    loadPlaces(city,"airport"),
-    // loadPlaces(city,"metro_station")
+    loadPlaces(city, "attraction"),
+    loadPlaces(city, "hotel"),
+    loadPlaces(city, "bus_station"),
+    loadPlaces(city, "train_station"),
+    loadPlaces(city, "airport")
   ]);
 }
 
-/* ---------- Load a category ---------- */
 async function loadPlaces(city, kind) {
-  const box = (kind === "hotel") ? "#hotels" : (kind === "attraction") ? "#attractions" : "#travelpoints";
-  if (!document.querySelector(box).dataset.loaded) {          // show once
-    document.querySelector(box).innerHTML = "Loading…";
-    document.querySelector(box).dataset.loaded = "yes";
+  const box = kind === "hotel" ? "#hotels" : kind === "attraction" ? "#attractions" : "#travelpoints";
+  const container = document.querySelector(box);
+
+  if (!container.dataset.loaded) {
+    container.innerHTML = "Loading…";
+    container.dataset.loaded = "yes";
   }
 
   const res = await fetch("{% url 'fetch_places' %}", {
@@ -134,74 +130,73 @@ async function loadPlaces(city, kind) {
     body: JSON.stringify({ city, kind })
   }).then(r => r.json());
 
-  // build cards
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const currIndex = document.querySelector(box).querySelectorAll("label.list-group-item").length;
-  res.results.forEach((p,i) => {
-    p.kind = kind;                // keep track
+  const currIndex = container.querySelectorAll("label.list-group-item").length;
+  res.results.forEach((p, i) => {
+    p.kind = kind;
     allPlaces.push(p);
-    const code = letters[(currIndex+i)%26];
+    const code = letters[(currIndex + i) % 26];
     const img = p.photos?.[0]?.photo_reference
-      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${p.photos[0].photo_reference}&key={{GOOGLE_MAPS_API_KEY}}`
+      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${p.photos[0].photo_reference}&key={{ GOOGLE_MAPS_API_KEY }}`
       : "https://via.placeholder.com/200x100";
 
-    const label = `<strong class="me-2 text-primary">(${code})</strong>`;
     const html = `
       <label class="list-group-item d-flex gap-3 align-items-start">
         <input type="checkbox" value="${p.place_id}" class="form-check-input place-box flex-shrink-0" data-kind="${p.kind}">
         <img src="${img}">
-        <span>${label}<strong>${p.name}</strong><br><small>${p.formatted_address}</small></span>
+        <span><strong class="me-2 text-primary">(${code})</strong><strong>${p.name}</strong><br><small>${p.formatted_address}</small></span>
       </label>`;
-    document.querySelector(box).insertAdjacentHTML("beforeend", html);
+    container.insertAdjacentHTML("beforeend", html);
   });
 
-  // remove temporary “Loading…”
-  if (document.querySelector(box).innerHTML.startsWith("Loading")) {
-    document.querySelector(box).innerHTML = document.querySelector(box).innerHTML.replace("Loading…","");
-  }
+  container.innerHTML = container.innerHTML.replace("Loading…", "");
 
-  // hook checkboxes
   document.querySelectorAll(".place-box").forEach(cb => cb.onchange = () => {
     cb.checked ? selected.add(cb.value) : selected.delete(cb.value);
     document.getElementById("route-btn").disabled = selected.size < 2;
   });
 }
 
-/* ---------- Helpers ---------- */
 function toggleRouteBtn(state) {
   const btn = document.getElementById("route-btn");
   const spin = btn.querySelector(".spinner-border");
-  if (state === "busy") { btn.disabled = true; spin.classList.remove("d-none"); }
-  else { btn.disabled = selected.size < 2; spin.classList.add("d-none"); }
+  if (state === "busy") {
+    btn.disabled = true;
+    spin.classList.remove("d-none");
+  } else {
+    btn.disabled = selected.size < 2;
+    spin.classList.add("d-none");
+  }
 }
 
 function ensureMap() {
   if (!map) {
-    map = new google.maps.Map(document.getElementById("route-map"), { zoom: 6, center: { lat: 22, lng: 80 }});
-    dirSrv  = new google.maps.DirectionsService();
+    map = new google.maps.Map(document.getElementById("route-map"), {
+      zoom: 6,
+      center: { lat: 22, lng: 80 }
+    });
+    dirSrv = new google.maps.DirectionsService();
     dirRend = new google.maps.DirectionsRenderer({ suppressMarkers: true });
     dirRend.setMap(map);
   }
 }
 
-/* ---------- Build route ---------- */
 async function buildRoute() {
   if (isRouting || selected.size < 2) return;
   isRouting = true; toggleRouteBtn("busy");
 
   try {
-    // ensure hotel first if selected
-    const ordered = [...selected].sort((a,b) => {
-      const ak = allPlaces.find(x=>x.place_id===a)?.kind;
-      const bk = allPlaces.find(x=>x.place_id===b)?.kind;
-      return (ak==="hotel"&&bk!=="hotel") ? -1 : (bk==="hotel"&&ak!=="hotel") ? 1 : 0;
+    const ordered = [...selected].sort((a, b) => {
+      const ak = allPlaces.find(x => x.place_id === a)?.kind;
+      const bk = allPlaces.find(x => x.place_id === b)?.kind;
+      return (ak === "hotel" && bk !== "hotel") ? -1 : (bk === "hotel" && ak !== "hotel") ? 1 : 0;
     });
 
     const data = await fetch("{% url 'build_route' %}", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json"},
-      body:JSON.stringify({ place_ids: ordered })
-    }).then(r=>r.json());
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ place_ids: ordered })
+    }).then(r => r.json());
 
     if (!data.waypoints) throw new Error(data.error || "Could not build route");
 
@@ -209,65 +204,96 @@ async function buildRoute() {
     document.getElementById("route-map").classList.remove("d-none");
     ensureMap();
 
-    const waypts = ids.slice(1,-1).map(id=>({location:{placeId:id},stopover:true}));
+    const waypts = ids.slice(1, -1).map(id => ({ location: { placeId: id }, stopover: true }));
     dirSrv.route({
-      origin:{placeId:ids[0]},
-      destination:{placeId:ids[ids.length-1]},
-      waypoints:waypts,
-      travelMode:google.maps.TravelMode.DRIVING
-    }, (dirs,status)=>{
-      if(status!=="OK"){ alert("Directions error: "+status); toggleRouteBtn("idle"); isRouting=false; return;}
+      origin: { placeId: ids[0] },
+      destination: { placeId: ids[ids.length - 1] },
+      waypoints: waypts,
+      travelMode: google.maps.TravelMode.DRIVING
+    }, (dirs, status) => {
+      if (status !== "OK") {
+        alert("Directions error: " + status);
+        toggleRouteBtn("idle"); isRouting = false;
+        return;
+      }
+
       dirRend.setDirections(dirs);
       renderSelectedList(ids, dirs.routes[0].legs);
+
       // custom markers
-      const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      if(window.customMarkers) window.customMarkers.forEach(m=>m.setMap(null));
-      window.customMarkers=[];
-      dirs.routes[0].legs.forEach((leg,i)=>{
-        const start=new google.maps.Marker({position:leg.start_location,label:letters[i],map});
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      if (window.customMarkers) window.customMarkers.forEach(m => m.setMap(null));
+      window.customMarkers = [];
+
+      dirs.routes[0].legs.forEach((leg, i) => {
+        const start = new google.maps.Marker({ position: leg.start_location, label: letters[i], map });
         window.customMarkers.push(start);
-        if(i===dirs.routes[0].legs.length-1){
-          const end=new google.maps.Marker({position:leg.end_location,label:letters[i+1],map});
+        if (i === dirs.routes[0].legs.length - 1) {
+          const end = new google.maps.Marker({ position: leg.end_location, label: letters[i + 1], map });
           window.customMarkers.push(end);
         }
       });
-      document.getElementById("save-trip-btn").disabled=false;
-      toggleRouteBtn("idle"); isRouting=false;
+
+      document.getElementById("save-trip-btn").disabled = false;
+      toggleRouteBtn("idle");
+      isRouting = false;
     });
-  } catch(e){ alert(e.message); toggleRouteBtn("idle"); isRouting=false; }
+  } catch (e) {
+    alert(e.message);
+    toggleRouteBtn("idle");
+    isRouting = false;
+  }
 }
 
-/* ---------- Render Selected List ---------- */
 function renderSelectedList(ids, legs) {
-  const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const html = ids.map((pid,i)=>{
-    const p = allPlaces.find(o=>o.place_id===pid) || {};
-    const icon = (p.kind==="hotel")          ? "🏨"
-               : (p.kind==="bus_station")    ? "🚌"
-               : (p.kind==="train_station")  ? "🚉"
-               : (p.kind==="airport")        ? "✈️"
-               : (p.kind==="metro_station")  ? "🚇"
-               : "📍";
-    const dist=(i>0&&legs[i-1]) ? ` — ${legs[i-1].distance.text}` : "";
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const html = ids.map((pid, i) => {
+    const p = allPlaces.find(o => o.place_id === pid) || {};
+    const icon = (p.kind === "hotel") ? "🏨"
+      : (p.kind === "bus_station") ? "🚌"
+        : (p.kind === "train_station") ? "🚉"
+          : (p.kind === "airport") ? "✈️"
+            : "📍";
+    const dist = (i > 0 && legs[i - 1]) ? ` — ${legs[i - 1].distance.text}` : "";
     return `<li class="mb-2"><strong class="text-primary">(${letters[i]})</strong> ${icon} ${p.name}${dist}</li>`;
   }).join("");
-  document.querySelector(".selected-places").innerHTML =
-    `<div class="mt-3"><h5 class="fw-bold">🗺️ Route Order</h5><ul class="list-unstyled">${html}</ul></div>`;
+  document.querySelector(".selected-places").innerHTML = `
+    <div class="mt-3">
+      <h5 class="fw-bold">🗺️ Route Order</h5>
+      <ul class="list-unstyled">${html}</ul>
+    </div>`;
 }
 
-/* ---------- Save trip ---------- */
-document.getElementById("save-trip-btn").addEventListener("click", async()=>{
-  const city=document.getElementById("city-input").value.trim();
-  if(!city||selected.size<2) return alert("No route to save.");
-  const name=prompt("Give this trip a name:",`Trip to ${city}`);
-  if(!name) return;
-  const res=await fetch("{% url 'save_trip' %}",{
-    method:"POST", headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({ name, city, place_ids:[...selected] })
+document.getElementById("save-trip-btn").addEventListener("click", async () => {
+  const city = document.getElementById("city-input").value.trim();
+  if (!city || selected.size < 2) return alert("No route to save.");
+  const name = prompt("Give this trip a name:", `Trip to ${city}`);
+  if (!name) return;
+  const btn = document.getElementById("save-trip-btn");
+  btn.disabled = true;
+  const res = await fetch("{% url 'save_trip' %}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, city, place_ids: [...selected] })
   });
-  const data=await res.json();
-  if(res.ok){ alert("Trip saved! ✅"); window.location.href="{% url 'your-trip' %}"; }
-  else      { alert("Error: "+(data.error||"could not save trip")); }
+  const data = await res.json();
+  if (res.ok) {
+    alert("Trip saved! ✅");
+    window.location.href = "{% url 'your-trip' %}";
+  } else {
+    alert("Error: " + (data.error || "could not save trip"));
+    btn.disabled = false;
+  }
+});
+
+// ✅ Ensure initPlanner runs after Google Maps is ready
+window.addEventListener("load", () => {
+  const check = setInterval(() => {
+    if (typeof google !== "undefined" && google.maps?.places) {
+      clearInterval(check);
+      initPlanner();
+    }
+  }, 100);
 });
 </script>
 {% endblock %}

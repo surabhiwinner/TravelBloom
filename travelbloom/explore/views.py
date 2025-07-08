@@ -148,6 +148,18 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
+def get_place_detail(place_id):
+    response = requests.get(
+        "https://maps.googleapis.com/maps/api/place/details/json",
+        params={
+            "place_id": place_id,
+            "fields": "name,geometry",
+            "key": settings.GOOGLE_MAPS_API_KEY
+        }
+    )
+    return response.json().get("result")
+
+
 
 @require_POST
 @csrf_exempt
@@ -280,8 +292,9 @@ def calculate_total_distance(place_coords):
     return round(total, 2)
 
 
-@require_POST
+
 @csrf_exempt
+@require_POST
 def save_trip(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Login required."}, status=401)
@@ -293,51 +306,76 @@ def save_trip(request):
         place_ids = data.get("place_ids", [])
 
         if not city or not place_ids:
-            return JsonResponse({"error": "City and place_ids are required."}, status=400)
+            return JsonResponse({"error": "City and places required."}, status=400)
 
-        # 1. Fetch coordinates of all place_ids
-        details_url = "https://maps.googleapis.com/maps/api/place/details/json"
-        coords = []
+        hotel_id = None
+        hotel_lat = hotel_lng = None
+        attraction_data = []
+
         for pid in place_ids:
-            res = requests.get(details_url, params={
-                "place_id": pid,
-                "key": settings.GOOGLE_MAPS_API_KEY,
-                "fields": "geometry/location"
-            }).json()
+            result = get_place_detail(pid)
+            if not result:
+                continue
+            lat = result["geometry"]["location"]["lat"]
+            lng = result["geometry"]["location"]["lng"]
+            types = result.get("types", [])
 
-            loc = res.get("result", {}).get("geometry", {}).get("location")
-            if loc:
-                coords.append({
-                    "lat": loc["lat"],
-                    "lng": loc["lng"]
+            # DEBUG log
+            print(f"[DEBUG] Place ID: {pid}, Name: {result.get('name')}, Types: {types}")
+
+            is_lodging = "lodging" in types
+            is_hotel_keyword = any(word in result.get("name", "").lower() for word in ["hotel", "inn", "resort", "hostel", "homestay"])
+
+            if (is_lodging or is_hotel_keyword) and not hotel_id:
+                hotel_id = pid
+                hotel_lat = lat
+                hotel_lng = lng
+            else:
+                attraction_data.append({
+                    'place_id': pid,
+                    'lat': lat,
+                    'lng': lng
                 })
 
-        if len(coords) < 2:
-            return JsonResponse({"error": "Need at least 2 valid locations to calculate distance."}, status=400)
+        if not hotel_id:
+            return JsonResponse({"error": "At least one hotel (lodging) must be selected."}, status=400)
 
-        # 2. Calculate total distance
-        total_distance = calculate_total_distance(coords)
+        # Sort attractions by distance from hotel
+        for place in attraction_data:
+            place['distance'] = haversine(hotel_lat, hotel_lng, place['lat'], place['lng'])
 
-        # 3. Save trip
+        attraction_data.sort(key=lambda x: x['distance'])
+
+        ordered_place_ids = [hotel_id] + [a['place_id'] for a in attraction_data]
+
+        # Calculate total distance
+        coords = [(hotel_lat, hotel_lng)] + [(a['lat'], a['lng']) for a in attraction_data]
+        total_distance = 0.0
+        for i in range(1, len(coords)):
+            total_distance += haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1])
+
+        final_lat = coords[-1][0]
+        final_lng = coords[-1][1]
+
         trip = Trip.objects.create(
             user=request.user,
             name=name,
             city=city,
-            place_ids=place_ids,
-            distance=total_distance,
-            final_place_lat=coords[-1]["lat"],     
-            final_place_lng=coords[-1]["lng"],
-
+            place_ids=ordered_place_ids,
+            distance=round(total_distance, 2),
+            final_place_lat=final_lat,
+            final_place_lng=final_lng
         )
 
-        return JsonResponse({"status": "success", "trip_id": trip.uuid, "distance": total_distance})
+        return JsonResponse({"success": True, "trip_id": str(trip.uuid), "distance": round(total_distance, 2)})
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-
 class TripListView(View):
     def get(self, request, *args, **kwargs):
-        trips = Trip.objects.all()
+        trips = Trip.objects.filter(user=request.user)
+
         grouped_trips = [
             {
                 "status": "Planning",
@@ -412,3 +450,111 @@ class TripCompleteView(View):
         trip.save()
 
         return JsonResponse({'success' :True })
+
+
+
+class TripDetailView(View):
+    def get(self, request, uuid):
+        trip = get_object_or_404(Trip, uuid=uuid)
+        visited = trip.visited_places or []
+        all_visited = set(visited) == set(trip.place_ids)
+
+        ordered_place_details = []
+
+        for i, pid in enumerate(trip.place_ids):
+            try:
+                response = requests.get(
+                    "https://maps.googleapis.com/maps/api/place/details/json",
+                    params={
+                        "place_id": pid,
+                        "fields": "name,geometry",
+                        "key": settings.GOOGLE_MAPS_API_KEY,
+                    },
+                    timeout=5  # prevent hanging indefinitely
+                )
+                data = response.json()
+                if data.get("status") == "OK":
+                    result = data["result"]
+                    ordered_place_details.append({
+                        "place_id": pid,
+                        "name": result["name"],
+                        "lat": result["geometry"]["location"]["lat"],
+                        "lng": result["geometry"]["location"]["lng"],
+                        "is_hotel": (i == 0),
+                        "is_visited": pid in visited,
+                        "all_visited": all_visited,
+                    })
+                else:
+                    print(f"Google API error: {data.get('status')} for place_id {pid}")
+            except RequestException as e:
+                print(f"Failed to fetch details for {pid}: {e}")
+                continue  # skip and proceed with others
+
+        context = {
+            "trip": trip,
+            "places": ordered_place_details,
+            "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY
+        }
+        return render(request, "explore/trip_detail.html", context)
+
+
+# New logic to mark visited places (based on proximity)
+@csrf_exempt
+@require_POST
+def mark_place_visited(request):
+    import json
+    try:
+        data = json.loads(request.body)
+        uuid = data.get("uuid")
+        lat = data.get("lat")
+        lng = data.get("lng")
+
+        trip = Trip.objects.get(uuid=uuid)
+        visited = trip.visited_places or []
+
+        if trip.place_ids:
+            for pid in trip.place_ids:
+                detail = get_place_detail(pid)
+                loc = detail['geometry']['location']
+                if haversine(lat, lng, loc['lat'], loc['lng']) < 0.5 and pid not in visited:
+                    visited.append(pid)
+
+        trip.visited_places = visited
+        trip.save(update_fields=['visited_places'])
+
+        return JsonResponse({"success": True, "visited": visited})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# View to check visited places
+@csrf_exempt
+@require_POST
+def check_trip_progress(request):
+    import json
+    data = json.loads(request.body)
+    uuid = data.get("uuid")
+    user_lat = data.get("lat")
+    user_lng = data.get("lng")
+
+    trip = Trip.objects.filter(uuid=uuid).first()
+    if not trip:
+        return JsonResponse({"error": "Trip not found."}, status=404)
+
+    visited = []
+    for pid in trip.place_ids:
+        detail = get_place_detail(pid)
+        if not detail:
+            continue
+        loc = detail['geometry']['location']
+        dist = haversine(user_lat, user_lng, loc['lat'], loc['lng'])
+        if dist <= 0.5:
+            visited.append(pid)
+
+    all_visited = set(visited) == set(trip.place_ids)
+
+    return JsonResponse({
+        "visited_places": visited,
+        "all_visited": all_visited
+    })

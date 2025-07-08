@@ -27,7 +27,9 @@
               data-final-lat="{{ trip.final_place_lat }}"
               data-final-lng="{{ trip.final_place_lng }}">
             <div>
-              <h6 class="mb-1 text-success">{{ trip.name }}</h6>
+              <h6 class="mb-1 text-success"> 
+                 <a href="{% url 'view-trip' trip.uuid %}" class="text-success text-decoration-none" title="View trip details">
+    {{ trip.name }}</a></h6>
               <small class="text-muted">{{ trip.city }} — {{ trip.place_ids|length }} stop{{ trip.place_ids|length|pluralize }}</small>
             </div>
             <div class="d-flex align-items-center gap-2">

@@ -47,6 +47,7 @@ class Trip(BaseClass):
     place_ids = models.JSONField(help_text="List of Google Place IDs in selected order")
     final_place_lat = models.FloatField(null=True, blank=True)
     final_place_lng = models.FloatField(null=True, blank=True)
+    visited_places = models.JSONField(default=list, blank=True)
 
 
     def __str__(self):

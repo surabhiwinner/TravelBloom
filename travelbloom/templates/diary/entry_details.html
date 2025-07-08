@@ -1,62 +1,74 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 {% load static %}
 
 {% block section %}
 <div class="container mt-5 mb-5">
   <div class="card shadow-lg border-0">
     <div class="card-body">
-      <h2 class="card-title text-primary">{{ diary_entry.title }}</h2>
+      <h2 class="card-title text-primary display-6">{{ diary_entry.title }}</h2>
 
-      <p class="text-muted mb-2">
-        {{ diary_entry.created_at|date:"F j, Y g:i a" }}
+      <p class="text-muted mb-3">
+        🕒 {{ diary_entry.created_at|date:"F j, Y g:i a" }}
         {% if diary_entry.latitude and diary_entry.longitude %}
-          &nbsp;|&nbsp; Location: ({{ diary_entry.latitude }}, {{ diary_entry.longitude }})
+          &nbsp;|&nbsp; 📍 ({{ diary_entry.latitude }}, {{ diary_entry.longitude }})
         {% endif %}
       </p>
 
-      <hr>
+      <hr class="mb-4">
 
-      <h5 class="text-secondary">Notes</h5>
-      <p class="card-text">{{ diary_entry.notes|linebreaks }}</p>
+      <h5 class="text-secondary">📝 Notes</h5>
+      <p class="card-text fs-6 lh-lg">{{ diary_entry.notes|linebreaks }}</p>
 
       {% if diary_media %}
-        <hr>
-        <h5 class="text-secondary mb-3">Media</h5>
+        <hr class="my-4">
+        <h5 class="text-secondary mb-4">📸 Media</h5>
         <div class="row">
           {% for media in diary_media %}
-            <div class="col-6 col-md-3 mb-4">
-              <div class="card h-100 shadow-sm border-0">
-                {% if media.media_type == "image" %}
-                 
-                  <img src="{{ media.file.url }}" class="card-img-top img-thumbnail"
-                       style="height:180px; object-fit:cover;" alt="Image">
-                <!-- {% elif media.media_type == "video" %}
-                  <video controls class="card-img-top img-thumbnail"
-                         style="height:180px; object-fit:cover;">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+              <div class="card h-100 shadow-sm border-0 rounded-3 media-card hover-shadow">
+                {% if media.media_type|lower == "image" %}
+                  <img src="{{ media.file.url }}" class="card-img-top rounded-top" 
+                       style="height:200px; object-fit:cover;" alt="Image">
+                {% elif media.media_type|lower == "video" %}
+                  <video controls class="card-img-top rounded-top"
+                         style="height:200px; object-fit:cover;">
                     <source src="{{ media.file.url }}">
+                    Your browser does not support video.
                   </video>
-                {% elif media.media_type == "audio" %}
+                {% elif media.media_type|lower == "audio" %}
                   <div class="p-3 text-center">
                     <audio controls class="w-100">
                       <source src="{{ media.file.url }}">
+                      Your browser does not support audio.
                     </audio>
                   </div>
                 {% else %}
                   <div class="p-3 text-center">
                     <a href="{{ media.file.url }}" download
-                       class="btn btn-sm btn-outline-secondary">
-                      Download
+                       class="btn btn-outline-secondary btn-sm w-100">
+                      📎 Download File
                     </a>
-                  </div>-->
+                  </div>
                 {% endif %}
+                <div class="card-footer small text-muted text-center bg-light border-top">
+                  {{ media.media_type|capfirst }}
+                </div>
               </div>
             </div>
           {% endfor %}
         </div>
       {% else %}
-        <p class="text-muted">No media files uploaded.</p>
+        <p class="text-muted mt-4">No media files uploaded.</p>
       {% endif %}
     </div>
   </div>
 </div>
+
+<style>
+  .media-card:hover {
+    transform: scale(1.02);
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  }
+</style>
 {% endblock %}

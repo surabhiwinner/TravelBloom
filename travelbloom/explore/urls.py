@@ -30,4 +30,7 @@ urlpatterns = [
 
     path('trip-complete/',views.TripCompleteView.as_view(), name= "complete-trip"),
 
+    path('trip/<str:uuid>/', views.TripDetailView.as_view(), name='view-trip'),
+    
+
 ]

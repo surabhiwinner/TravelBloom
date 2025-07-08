@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block section %}
+<div class="container py-5">
+  <h2 class="text-center mb-4 display-5 fw-bold text-primary">🗺️ Trip Route Overview</h2>
+
+  <!-- Trip Info -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h4 class="card-title text-success">{{ trip.name }}</h4>
+      <p class="mb-2">
+        <strong>City:</strong> {{ trip.city }}<br>
+        <strong>Total Stops:</strong> {{ trip.place_ids|length }}<br>
+        <strong>Status:</strong> 
+        <span class="badge 
+          {% if trip.status == 'Planning' %} bg-info
+          {% elif trip.status == 'Ongoing' %} bg-warning
+          {% elif trip.status == 'Completed' %} bg-success
+          {% endif %}">
+          {{ trip.status }}
+        </span>
+      </p>
+
+      <!-- Trip Actions -->
+      {% if trip.status == 'Planning' %}
+        <form method="post" action="{% url 'start-trip' trip.uuid %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-warning">🚀 Start Trip</button>
+        </form>
+      {% elif trip.status == 'Ongoing' %}
+        <button class="btn btn-success" onclick="completeTrip('{{ trip.uuid }}')">✅ Complete Trip</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Places in Order -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-primary">📍 Stops (in Order)</h5>
+      <ul class="list-group list-group-flush">
+        {% for place in places %}
+          <li class="list-group-item d-flex align-items-center justify-content-between">
+            <div>
+              <span class="me-2">({{ forloop.counter }})</span>
+              {% if place.is_hotel %}
+                🏨 <span class="text-success">{{ place.name }}</span>
+                <small class="ms-2 text-muted">(Hotel)</small>
+              {% else %}
+                {% if place.all_visited %}
+                  ✅
+                {% elif place.is_visited %}
+                  ✔️
+                {% else %}
+                  📍
+                {% endif %}
+                {{ place.name }}
+              {% endif %}
+            </div>
+            <div>
+              <small class="text-muted">[{{ place.lat }}, {{ place.lng }}]</small>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title text-primary">🗺️ Route Map</h5>
+      <div id="map" style="height: 500px;" class="rounded shadow-sm"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Google Maps Data -->
+{{ places|json_script:"trip-stops-data" }}
+
+<!-- Google Maps Script -->
+<script>
+  function initMap() {
+    const stops = JSON.parse(document.getElementById('trip-stops-data').textContent);
+    if (!stops.length) return;
+
+    const map = new google.maps.Map(document.getElementById("map"), {
+      zoom: 13,
+      center: { lat: stops[0].lat, lng: stops[0].lng },
+    });
+
+    const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
+
+    const waypoints = stops.slice(1, -1).map(p => ({
+      location: { lat: p.lat, lng: p.lng },
+      stopover: true
+    }));
+
+    directionsService.route({
+      origin: { lat: stops[0].lat, lng: stops[0].lng },
+      destination: { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lng },
+      waypoints: waypoints,
+      travelMode: google.maps.TravelMode.DRIVING,
+    }, (response, status) => {
+      if (status === "OK") {
+        directionsRenderer.setDirections(response);
+      } else {
+        alert("Failed to load directions: " + status);
+      }
+    });
+  }
+
+  function completeTrip(uuid) {
+    fetch("{% url 'complete-trip' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": '{{ csrf_token }}'
+      },
+      body: JSON.stringify({ uuid: uuid })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert("Trip marked as completed!");
+        location.reload();
+      } else {
+        alert("Failed to complete trip.");
+      }
+    });
+  }
+</script>
+
+<!-- Load Google Maps -->
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap">
+</script>
+{% endblock %}
