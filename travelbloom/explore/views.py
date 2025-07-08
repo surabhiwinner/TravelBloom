@@ -325,8 +325,8 @@ def save_trip(request):
             city=city,
             place_ids=place_ids,
             distance=total_distance,
-            final_lat=coords[-1]["lat"],     
-            final_lng=coords[-1]["lng"],
+            final_place_lat=coords[-1]["lat"],     
+            final_place_lng=coords[-1]["lng"],
 
         )
 
@@ -412,4 +412,3 @@ class TripCompleteView(View):
         trip.save()
 
         return JsonResponse({'success' :True })
-

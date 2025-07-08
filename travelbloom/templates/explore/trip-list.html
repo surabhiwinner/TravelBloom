@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block section %}
 <div class="container py-5">
-  <h2 class="text-center mb-5 display-5 fw-bold text-primary">📌 Your Saved Trips</h2>
+  <h2 class="text-center mb-4 display-5 fw-bold text-primary">📌 Your Saved Trips</h2>
+
+  <!-- Clear/Show All Buttons -->
+  <div class="d-flex justify-content-end mb-3 gap-2">
+    <button class="btn btn-outline-secondary btn-sm" onclick="clearAllTrips()">🧹 Clear All</button>
+    <button class="btn btn-outline-primary btn-sm" onclick="showAllTrips()">🔁 Show All</button>
+  </div>
 
   {% if grouped_trips %}
   <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -18,8 +24,8 @@
               data-ids='{{ trip.place_ids|safe }}'
               data-uuid="{{ trip.uuid }}"
               data-status="{{ group.status }}"
-              data-final-lat="{{ trip.final_lat }}"
-              data-final-lng="{{ trip.final_lng }}">
+              data-final-lat="{{ trip.final_place_lat }}"
+              data-final-lng="{{ trip.final_place_lng }}">
             <div>
               <h6 class="mb-1 text-success">{{ trip.name }}</h6>
               <small class="text-muted">{{ trip.city }} — {{ trip.place_ids|length }} stop{{ trip.place_ids|length|pluralize }}</small>
@@ -28,6 +34,7 @@
               <span class="badge bg-{{ group.color }} text-dark rounded-pill px-3 py-2">
                 🚗 {{ trip.distance|default:"0.0" }} km
               </span>
+
               {% if group.status == "Planning" %}
               <form method="post" action="{% url 'start-trip' trip.uuid %}" style="display:inline;">
                 {% csrf_token %}
@@ -38,7 +45,14 @@
                   🚀
                 </button>
               </form>
+              {% elif group.status == "Ongoing" %}
+              <button class="btn btn-sm btn-outline-primary"
+                      title="Mark as Done"
+                      onclick="markTripDone('{{ trip.uuid }}')">
+                ✅
+              </button>
               {% endif %}
+
               <a href="{% url 'trip-delete' trip.uuid %}"
                  class="btn btn-sm btn-outline-danger"
                  title="Delete Trip"
@@ -61,6 +75,7 @@
   </div>
   {% endif %}
 
+  <!-- Trip Route Summary -->
   <div class="card shadow-lg mt-5 d-none" id="trip-summary">
     <div class="card-body">
       <h4 class="card-title mb-3 text-primary">🗸️ Trip Route Summary</h4>
@@ -69,6 +84,7 @@
   </div>
 </div>
 
+<!-- Scripts -->
 <script>
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -84,7 +100,7 @@ function haversine(lat1, lon1, lat2, lon2) {
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".trip-item").forEach(li => {
     li.addEventListener("click", async (e) => {
-      if (e.target.closest('a') || e.target.closest('form')) return;
+      if (e.target.closest('a') || e.target.closest('form') || e.target.tagName === "BUTTON") return;
       const ids = JSON.parse(li.dataset.ids);
       const res = await fetch("{% url 'render_selected_list' %}", {
         method: "POST",
@@ -129,5 +145,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// ✅ Manual completion by Done button
+function markTripDone(uuid) {
+  fetch("{% url 'complete-trip' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ uuid: uuid })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Trip marked as completed!");
+      window.location.reload();
+    } else {
+      alert("Failed to complete trip.");
+    }
+  })
+  .catch(() => alert("Error completing trip."));
+}
+
+// 🧹 Hide all trips
+function clearAllTrips() {
+  document.querySelectorAll(".trip-item").forEach(item => {
+    item.style.opacity = "0";
+    setTimeout(() => item.style.display = "none", 300);
+  });
+}
+
+// 🔁 Show all trips
+function showAllTrips() {
+  document.querySelectorAll(".trip-item").forEach(item => {
+    item.style.display = "";
+    setTimeout(() => item.style.opacity = "1", 10);
+  });
+}
 </script>
 {% endblock %}
