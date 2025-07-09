@@ -1,150 +1,119 @@
 from django.shortcuts import render, redirect
-
-from django.contrib.auth import authenticate, login,logout
-
+from django.contrib.auth import authenticate, login, logout
 from django.views import View
-
-from .forms import LoginForm,TravellerRegisterForm,ProfileForm
-
+from django.utils import timezone
 from django.db import transaction
-
-from .models import Profile,Traveller
-
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.contrib.auth.hashers import make_password
+from travelbloom.utility import send_email
+from .forms import LoginForm, TravellerRegisterForm, ProfileForm
+from .models import Profile, Traveller
 import threading
 
-from django.contrib.auth.hashers import make_password
-
-from django.utils.decorators import method_decorator
-
-from django.views.decorators.cache import never_cache
-
-# Create your views here.
+# Optional: your email function
 
 
 
 class LoginView(View):
+    def get(self, request):
+        return render(request, 'authentication/login.html', {
+            'form': LoginForm(),
+            'page': 'login-page'
+        })
 
-    def get(self, request, *args , **kwargs):
-
-        form = LoginForm()
-
-        data = {
-            'page' : 'login-page',
-            'form'  : form
-        }
-        return render(request, 'authentication/login.html',context=data)
-    
-
-    def post(self, request, *args, **kwargs):
-
+    def post(self, request):
         form = LoginForm(request.POST)
-
         error = None
 
         if form.is_valid():
-
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
 
-            user = authenticate(request,username=username , password=password)
-
-            if user :
-
+            user = authenticate(request, username=username, password=password)
+            if user:
                 login(request, user)
-
                 return redirect('diary-list')
-            
-            error ='Invalid credencials'
 
-            data = {
-                'form' : form,
-                'error' : error,
-                'page' : LoginForm
-            }
+            error = 'Invalid credentials'
 
-            return render(request,'authentication/login.html', context=data)
-        
+        return render(request, 'authentication/login.html', {
+            'form': form,
+            'error': error,
+            'page': 'login-page'
+        })
+
+
 @method_decorator(never_cache, name='dispatch')
 class LogoutView(View):
-        
-        def get(self,request, *args, **kwargs):
-             
-            logout(request)
+    def get(self, request):
+        logout(request)
+        request.session.flush()
+        return redirect('home')
 
-            request.session.flush()
-
-            return redirect('home')
-        
 
 class RegisterTravellerView(View):
-     
+   
+
     def get(self, request, *args, **kwargs):
+       
+       profile_form = ProfileForm()
 
-        profile_form = ProfileForm()
+       traveller_form = TravellerRegisterForm()
 
-        traveller_form = TravellerRegisterForm()
+       print(profile_form.errors)
+
+       print(traveller_form.errors)
+
+       data  = {
+           'profile_form' :profile_form,
+           'traveller_form' :traveller_form
+       }
+
+       return render(request,'authentication/register_user.html',context=data)
+   
 
 
 
-        data ={
-            'traveller_form' : traveller_form,
-            'profile_form' :profile_form
-        }
-         
-        return render(request, 'authentication/register_user.html',context=data)
-    
     def post(self, request, *args, **kwargs):
+        profile_form = ProfileForm(request.POST)
+        traveller_form = TravellerRegisterForm(request.POST, request.FILES)
 
-        form= TravellerRegisterForm ( request.POST, request.FILES)
+        print("Profile Form Errors:", profile_form.errors)
+        print("Traveller Form Errors:", traveller_form.errors)
 
-        print(form.errors)
-
-        if form.is_valid():
-
+        if profile_form.is_valid() and traveller_form.is_valid():
             with transaction.atomic():
+                profile = profile_form.save(commit=False)
 
-                first_name = form.cleaned_data['first_name']
+                email = profile_form.cleaned_data.get('email')
+                password = profile_form.cleaned_data.get('password')
 
-                last_name = form.cleaned_data['last_name']
+                profile.username = email
+                profile.role = 'User'
+                profile.date_joined = timezone.now()
+                profile.password = make_password(password)
 
-                # profile = form.save(commit=False)
+                profile.save()
+                
 
-                email = form.cleaned_data.get('email')
+                traveller = traveller_form.save(commit=False)
+                traveller.profile = profile
+                traveller.name = f'{profile.first_name} {profile.last_name}'
+                traveller.email = profile.email
+                traveller.save()
 
-                password = form.cleaned_data.get('password')
+                # send email
+                subject = 'Successfully Registered !!!'
+                recipient = profile.email
+                template = 'emails/success-registration.html'
+                context = {'name': traveller.name, 'username': profile.username, 'password': password}
+                threading.Thread(target=send_email, args=(subject, recipient, template, context)).start()
 
-                number = form.cleaned_data['number']
+                return redirect('login')
 
-                image = form.cleaned_data['image']
-
-                profile = Profile.objects.create(
-
-                    username = email,
-                    first_name= first_name,
-                    last_name = last_name,
-                    email=email,
-                    role= 'User',
-                    password = make_password(password)
-                )
-
-                Traveller.objects.create(
-
-                    profile=profile,
-                    name=f'{first_name} {last_name}',
-                    email= email,
-                    number= number,
-                    image= image
-
-                )
-                return redirect ('login')
-            
-        return render(request, 'authentication/register_user.html', {'traveller_form': form})    
-
-
-
-            
-
-
-
-        
-
+        # Show errors if form is invalid
+        return render(request, 'authentication/register_user.html', {
+            'profile_form': profile_form,
+            'traveller_form': traveller_form
+        })

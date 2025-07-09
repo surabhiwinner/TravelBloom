@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Verify Your Email</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color:#f9f9f9; padding: 20px;">
+  <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <h2 style="color: #4CAF50;">Email Verification</h2>
+    <p>Dear <strong>{{ name }}</strong>,</p>
+    <p>Your OTP for verifying your TravelBloom account is:</p>
+    <div style="font-size: 24px; font-weight: bold; margin: 20px 0; color: #333; text-align: center;">
+      {{ otp }}
+    </div>
+    <p>This OTP is valid for a limited time. Please do not share it with anyone.</p>
+    <p>Thanks,<br>The TravelBloom Team</p>
+  </div>
+</body>
+</html>

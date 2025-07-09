@@ -148,7 +148,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 AUTH_USER_MODEL = 'authentication.Profile'
 
-
+# apis for map and chatbot 
 GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY')
 
 OPEN_AI_KEY = config('OPEN_AI_KEY_')
@@ -156,3 +156,15 @@ OPEN_AI_KEY = config('OPEN_AI_KEY_')
 GEMNI_API_KEY = config('GEMNI_KEY_')
 
 PLACES_NEW_API = config('PLACES_NEW_API_KEY_')
+
+
+# email setttings 
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

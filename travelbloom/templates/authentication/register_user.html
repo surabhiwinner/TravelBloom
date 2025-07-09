@@ -8,76 +8,86 @@
     <source src="{% static 'video/background-video2.mp4' %}" type="video/mp4">
     Your browser does not support HTML5 video.
 </video>
+
 <div class="video-overlay">
-<!-- Centered Form Container -->
-<div class="register-container d-flex align-items-center justify-content-center">
-    <div class="card shadow p-5 form-box">
-        <div class="text-center mb-4">
-            <h2 class="text-success">Register Traveller</h2>
-        </div>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
+  <!-- Centered Form Container -->
+  <div class="register-container d-flex align-items-center justify-content-center">
+      <div class="card shadow p-5 form-box">
+          <div class="text-center mb-4">
+              <h2 class="text-success">Register Traveller</h2>
+          </div>
+          <form method="POST" enctype="multipart/form-data">
+              {% csrf_token %}
 
-            <!-- First Name -->
-            <div class="mb-3">
-                <label class="form-label">First Name</label>
-                {{ profile_form.first_name }}
-                {% if profile_form.first_name.errors %}
-                    <div class="text-danger">{{ profile_form.first_name.errors.0 }}</div>
-                {% endif %}
-            </div>
+              <!-- First Name -->
+              <div class="mb-3">
+                  <label class="form-label">First Name</label>
+                  {{ profile_form.first_name }}
+                  {% if profile_form.first_name.errors %}
+                      <div class="text-danger">{{ profile_form.first_name.errors.0 }}</div>
+                  {% endif %}
+              </div>
 
-            <!-- Last Name -->
-            <div class="mb-3">
-                <label class="form-label">Last Name</label>
-                {{ profile_form.last_name }}
-                {% if profile_form.last_name.errors %}
-                    <div class="text-danger">{{ profile_form.last_name.errors.0 }}</div>
-                {% endif %}
-            </div>
+              <!-- Last Name -->
+              <div class="mb-3">
+                  <label class="form-label">Last Name</label>
+                  {{ profile_form.last_name }}
+                  {% if profile_form.last_name.errors %}
+                      <div class="text-danger">{{ profile_form.last_name.errors.0 }}</div>
+                  {% endif %}
+              </div>
 
-            <!-- Email -->
-            <div class="mb-3">
-                <label class="form-label">Email</label>
-                {{ profile_form.email }}
-                {% if profile_form.email.errors %}
-                    <div class="text-danger">{{ profile_form.email.errors.0 }}</div>
-                {% endif %}
-            </div>
+              <!-- Email -->
+              <div class="mb-3">
+                  <label class="form-label">Email</label>
+                  {{ profile_form.email }}
+                  {% if profile_form.email.errors %}
+                      <div class="text-danger">{{ profile_form.email.errors.0 }}</div>
+                  {% endif %}
+              </div>
 
-            <!-- Number -->
-            <div class="mb-3">
-                <label class="form-label">Number</label>
-                {{ traveller_form.number }}
-                {% if traveller_form.number.errors %}
-                    <div class="text-danger">{{ traveller_form.number.errors.0 }}</div>
-                {% endif %}
-            </div>
+              <!-- Number -->
+              <div class="mb-3">
+                  <label class="form-label">Number</label>
+                  {{ traveller_form.number }}
+                  {% if traveller_form.number.errors %}
+                      <div class="text-danger">{{ traveller_form.number.errors.0 }}</div>
+                  {% endif %}
+              </div>
 
-            <!-- Image -->
-            <div class="mb-3">
-                <label class="form-label">Profile Image</label>
-                {{ traveller_form.image }}
-                {% if traveller_form.image.errors %}
-                    <div class="text-danger">{{ traveller_form.image.errors.0 }}</div>
-                {% endif %}
-            </div>
+              <!-- Image -->
+              <div class="mb-3">
+                  <label class="form-label">Profile Image</label>
+                  {{ traveller_form.image }}
+                  {% if traveller_form.image.errors %}
+                      <div class="text-danger">{{ traveller_form.image.errors.0 }}</div>
+                  {% endif %}
+              </div>
 
-            <!-- Password -->
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                {{ profile_form.password }}
-                {% if profile_form.password.errors %}
-                    <div class="text-danger">{{ profile_form.password.errors.0 }}</div>
-                {% endif %}
-            </div>
+              <!-- Password -->
+              <div class="mb-3">
+                  <label class="form-label">Password</label>
+                  {{ profile_form.password }}
+                  {% if profile_form.password.errors %}
+                      <div class="text-danger">{{ profile_form.password.errors.0 }}</div>
+                  {% endif %}
+              </div>
 
-            <button type="submit" class="btn btn-success w-100">
-                <i class="fa fa-save"></i> Register
-            </button>
-        </form>
-    </div>
-</div>
+              <!-- Confirm Password -->
+              <div class="mb-3">
+                  <label class="form-label">Confirm Password</label>
+                  {{ profile_form.confirm_password }}
+                  {% if profile_form.confirm_password.errors %}
+                      <div class="text-danger">{{ profile_form.confirm_password.errors.0 }}</div>
+                  {% endif %}
+              </div>
+
+              <button type="submit" class="btn btn-success w-100">
+                  <i class="fa fa-save"></i> Register
+              </button>
+          </form>
+      </div>
+  </div>
 </div>
 
 <!-- Extra CSS -->
@@ -89,14 +99,12 @@
         min-width: 100%;
         min-height: 100%;
         z-index: -1;
-      
-        object-fit:cover;
-        
+        object-fit: cover;
     }
-    .video-overlay {
-    background: rgba(0, 0, 0, 0.4);  /* darkens background without reducing clarity */
-}
 
+    .video-overlay {
+        background: rgba(0, 0, 0, 0.4);
+    }
 
     .register-container {
         min-height: 100vh;
