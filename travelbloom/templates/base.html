@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>TravelBloom</title>
+    <title>SmartVoyager
+
+</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="Travelix Project">
@@ -24,14 +26,131 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- FontAwesome v6 (latest) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Swiper -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    
 </head>
 
 <body>
+
+<style>
+.social_list {
+  padding: 0;
+  margin: 0;
+}
+
+.social_list li {
+  list-style: none;
+  margin: 0 10px;
+}
+
+.social_list a {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 30px;
+  padding: 2px;
+  border-radius: 20%;
+  background: #f0f0f0;
+  color: #333;
+  font-size: 20px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.social_list a:hover {
+  background: #007bff;
+  color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+}
+
+#chat-toggle {
+  background: #007bff;
+  border: none;
+  color: white;
+  font-size: 22px;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+#chat-toggle:hover {
+  transform: scale(1.1);
+}
+
+.chatbox {
+  display: none;
+  width: 320px;
+  height: 420px;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+  flex-direction: column;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+#chatbox-header {
+  background: #007bff;
+  color: white;
+  padding: 12px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.chatbox-messages {
+  height: 300px;
+  padding: 10px;
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+#chatbox-footer {
+  padding: 10px;
+  background: #f9f9f9;
+  display: flex;
+  gap: 5px;
+}
+
+#chatbox-footer input {
+  flex: 1;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 5px;
+}
+
+#chatbox-footer button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+}
+</style>
+
 <div class="super_container">
 
     <!-- Header -->
@@ -42,14 +161,14 @@
                     <div class="col d-flex flex-row">
                         <div class="phone">+45 345 3324 56789</div>
                         <div class="social ml-auto">
-                            <ul class="social_list d-flex">
-                                <li><a href="#"><i class="fa fa-pinterest"></i></a></li>
-                                <li><a href="#"><i class="fa fa-facebook"></i></a></li>
-                                <li><a href="#"><i class="fa fa-twitter"></i></a></li>
-                                <li><a href="#"><i class="fa fa-instagram"></i></a></li>
-                                <li><a href="#"><i class="fa fa-linkedin"></i></a></li>
-                            </ul>
-                        </div>
+  <ul class="social_list d-flex align-items-center">
+    <li><a href="#"><i class="fab fa-facebook-f"></i></a></li>
+    <li><a href="#"><i class="fab fa-twitter"></i></a></li>
+    <li><a href="#"><i class="fab fa-instagram"></i></a></li>
+    <li><a href="#"><i class="fab fa-linkedin-in"></i></a></li>
+    <li><a href="#"><i class="fab fa-pinterest-p"></i></a></li>
+  </ul>
+</div>
                         <div class="user_box ml-4">
                             <a href="{% url 'login' %}">Login</a> / <a href="{% url 'register' %}">Register</a>
                         </div>
@@ -62,7 +181,9 @@
         <nav class="navbar navbar-expand-lg">
             <div class="container">
                 <a class="navbar-brand" href="#">
-                    <img src="/static/images/logo.png" alt="Logo" style="height: 30px;"> TravelBloom
+                    <img src="/static/images/logo.png" alt="Logo" style="height: 30px;"> SmartVoyager
+
+
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
                     <span class="navbar-toggler-icon"></span>
@@ -71,16 +192,17 @@
                 <div class="collapse navbar-collapse" id="mainNavbar">
                     <ul class="navbar-nav ms-auto d-flex align-items-center gap-3">
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'home-page' %}active{% endif %}" href="{% url 'home' %}">Home</a>
+                            <a class="nav-link {% if page == 'home-page' %}text-white {% else %}text-primary{% endif %}" href="{% url 'home' %}">Home</a>
                         </li>
+                        
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'map-page' %}active{% endif %}" href="{% url 'map' %}">Map</a>
+                            <a class="nav-link {% if page == 'map-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'map' %}">Map</a>
                         </li>
 
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'diary-page' %}active{% endif %}" href="{% url 'diary-list' %}">Diary</a>
+                            <a class="nav-link {% if page == 'diary-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'diary-list' %}">Diary</a>
                         </li>
                         
                         {% endif %}
@@ -90,7 +212,7 @@
                          {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'planner-page' %}active{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
+                            <a class="nav-link {% if page == 'planner-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
                         </li>
                        
                         {% endif %}
@@ -99,7 +221,7 @@
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'your-trip-page' %}active{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>
+                            <a class="nav-link {% if page == 'your-trip-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>
                         </li>
                         
                         {% endif %}
@@ -107,10 +229,10 @@
                         
 
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'blog-page' %}active{% endif %}" href="#">Blog</a>
+                            <a class="nav-link {% if page == 'blog-page' %}text-white {% else %} text-primary{% endif %}" href="#">Blog</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'contact-page' %}active{% endif %}" href="#">Contact</a>
+                            <a class="nav-link {% if page == 'contact-page' %}text-white{% else %} text-primary{% endif %}" href="{% url 'contact' %}">Contact</a>
                         </li>
 
                         {% if request.user.is_authenticated %}
@@ -118,8 +240,8 @@
                         {% if allow %}
                         <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" data-bs-toggle="dropdown">
-                                <img src="/static/images/user.png" class="rounded-circle me-2" style="width: 30px; height: 30px;">
-                                <p class="text-secondary ms-1 mb-0">{{ user }}</p>
+                                <img src="/media/Traveller-imags/user.png" class="rounded-circle me-2" style="width: 30px; height: 30px;">
+                                <p class="text-primary {%if active %} text-white{% endif %} ms-1 mb-0">{{ user }}</p>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
@@ -140,20 +262,20 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5>About Travelix</h5>
+                    <h5 class="text-primary">About Travelix</h5>
                     <p>Discover places. Record memories. Share journeys. Your digital travel diary starts here.</p>
                 </div>
                 <div class="col-md-4">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="#">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="offers.html">Offers</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                    <h5 class="text-primary">Quick Links</h5>
+                    <ul class="list-unstyled ">
+                        <li><a href="#" class="text-info">Home</a></li>
+                        <li><a href="about.html" class="text-info">About</a></li>
+                        <li><a href="offers.html" class="text-info">Offers</a></li>
+                        <li><a href="contact.html" class="text-info">Contact</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <h5>Contact</h5>
+                    <h5 class="text-primary">Contact</h5>
                     <p>Email: contact@travelix.com<br>Phone: +45 345 3324 56789</p>
                 </div>
             </div>
@@ -184,113 +306,148 @@
 
 <!-- Floating Chat Icon -->
 <div id="chatbot-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
-    <button class="btn btn-primary" onclick="toggleChat()">💬</button>
-    <div id="chatbox" style="display: none; width: 300px; height: 400px; background: white; box-shadow: 0 0 10px #ccc; border-radius: 10px; overflow: hidden;">
-        <div id="chat-messages" style="height: 85%; padding: 10px; overflow-y: auto;"></div>
-        <div class="input-group">
-            <input id="chat-input" class="form-control" placeholder="Ask me..." />
-            <button onclick="sendChat()" class="btn btn-success">Send</button>
-        </div>
+  <button id="chat-toggle">💬</button>
+  <div id="chatbox" class="chatbox">
+    <div id="chatbox-header">SmartVoyager AI</div>
+    <div id="chat-messages" class="chatbox-messages"></div>
+    <div id="chatbox-footer">
+      <input id="chat-input" type="text" placeholder="Ask something..." />
+      <button id="chat-send">Send</button>
     </div>
+  </div>
+</div>
+
+<!-- Toast for location -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+  <div id="locationToast" class="toast align-items-center text-bg-primary border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Fetching location...</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
 </div>
 
 <script>
-function toggleChat() {
-    const chatbox = document.getElementById("chatbox");
-    chatbox.style.display = chatbox.style.display === "none" ? "block" : "none";
-}
+document.addEventListener("DOMContentLoaded", function () {
+  const chatToggle = document.getElementById("chat-toggle");
+  const chatbox = document.getElementById("chatbox");
+  const input = document.getElementById("chat-input");
+  const sendBtn = document.getElementById("chat-send");  // ❌ This ID does NOT exist in your HTML
+  const messagesDiv = document.getElementById("chat-messages");
 
-let userLat = null;
-let userLng = null;
-let locationFetched = false;
+  let userLat = null;
+  let userLng = null;
+  let locationFetched = false;
 
-function sendChat() {
-    const input = document.getElementById("chat-input");
-    let message = input.value.trim();
-    if (!message) return;
+  // ✅ Toggle chat visibility
+  chatToggle.addEventListener("click", function () {
+    chatbox.style.display = (chatbox.style.display === "none" || chatbox.style.display === "") ? "flex" : "none";
+  });
 
-    const messagesDiv = document.getElementById("chat-messages");
+  // ❌ FIX: sendBtn is null if its ID in HTML is wrong (use fallback listener on button below)
+  document.querySelector("#chatbox-footer button").addEventListener("click", sendChat);
+
+  input.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendChat();
+    }
+  });
+
+  // ✅ Core send logic
+  function sendChat() {
+    const message = input.value.trim();
+    console.log("User input message:", message);
+
+    if (!message) {
+      console.log("Empty message, returning...");
+      return;
+    }
+
     messagesDiv.innerHTML += `<div><strong>You:</strong> ${message}</div>`;
     input.value = "";
 
     const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
+      .split("; ")
+      .find(row => row.startsWith("csrftoken="))
+      ?.split("=")[1];
 
-    // First try to get location (only once per session)
+    console.log("CSRF Token:", csrfToken);
+
     if (!locationFetched && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            userLat = position.coords.latitude;
-            userLng = position.coords.longitude;
-            locationFetched = true;
+      console.log("Fetching user location...");
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          userLat = position.coords.latitude;
+          userLng = position.coords.longitude;
+          locationFetched = true;
 
-            // Optional: show toast
-            const locationInfo = `Latitude: ${userLat.toFixed(4)}, Longitude: ${userLng.toFixed(4)}`;
-            const toastBody = document.getElementById("toastBody");
-            if (toastBody) {
-                toastBody.innerText = `📍 Your location: ${locationInfo}`;
-                const toast = new bootstrap.Toast(document.getElementById("locationToast"));
-                toast.show();
-            }
+          console.log("Location fetched:", userLat, userLng);
 
-            sendMessageToBot(message, csrfToken, messagesDiv);
-        }, function(error) {
-            locationFetched = true;
-            sendMessageToBot(message, csrfToken, messagesDiv);
-        });
+          const locationInfo = `Latitude: ${userLat.toFixed(4)}, Longitude: ${userLng.toFixed(4)}`;
+          const toastBody = document.getElementById("toastBody");
+          if (toastBody) {
+            toastBody.innerText = `📍 Your location: ${locationInfo}`;
+            const toast = new bootstrap.Toast(document.getElementById("locationToast"));
+            toast.show();
+          }
+
+          sendMessageToBot(message, csrfToken);
+        },
+        function (error) {
+          console.warn("Error fetching location:", error);
+          locationFetched = true;
+          sendMessageToBot(message, csrfToken);
+        }
+      );
     } else {
-        sendMessageToBot(message, csrfToken, messagesDiv);
+      console.log("Location already fetched or not available.");
+      sendMessageToBot(message, csrfToken);
     }
-}
+  }
 
-function sendMessageToBot(message, csrfToken, messagesDiv) {
-    const formData = new URLSearchParams({
-        message: message
-    });
+  // ✅ Format bot responses into bullet points
+  function formatBotResponse(response) {
+    const lines = response.split(/\n|(?<=\.)\s+/);
+    const filtered = lines.filter(line => line.trim().length > 0);
+    return `<ul>` + filtered.map(line => `<li>${line.trim()}</li>`).join('') + `</ul>`;
+  }
+
+  function sendMessageToBot(message, csrfToken) {
+    const formData = new URLSearchParams({ message });
 
     if (userLat && userLng) {
-        formData.append('latitude', userLat);
-        formData.append('longitude', userLng);
+      formData.append("latitude", userLat);
+      formData.append("longitude", userLng);
     }
 
     fetch("/chatbot/chat/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "X-CSRFToken": csrfToken,
-        },
-        body: formData
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": csrfToken,
+      },
+      body: formData,
     })
-    .then(res => res.json())
-    .then(data => {
+      .then(res => res.json())
+      .then(data => {
+        console.log("Bot response received:", data);
         if (data.response) {
-            messagesDiv.innerHTML += `<div><strong>Bot:</strong> ${data.response}</div>`;
+          messagesDiv.innerHTML += `<div><strong>Bot:</strong> ${formatBotResponse(data.response)}</div>`;
         } else if (data.error) {
-            messagesDiv.innerHTML += `<div><strong>Error:</strong> ${data.error}</div>`;
+          messagesDiv.innerHTML += `<div><strong>Error:</strong> ${data.error}</div>`;
         } else {
-            messagesDiv.innerHTML += `<div><strong>Error:</strong> Unknown error occurred.</div>`;
+          messagesDiv.innerHTML += `<div><strong>Error:</strong> Unknown error occurred.</div>`;
         }
-
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    })
-    .catch(err => {
+      })
+      .catch(err => {
+        console.error("Network error:", err);
         messagesDiv.innerHTML += `<div><strong>Error:</strong> Network error</div>`;
-    });
-}
-
-// ✅ Trigger send on Enter key
-document.addEventListener("DOMContentLoaded", function () {
-    const input = document.getElementById("chat-input");
-    input.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendChat();
-        }
-    });
+      });
+  }
 });
 </script>
-
 
 </body>
 </html>

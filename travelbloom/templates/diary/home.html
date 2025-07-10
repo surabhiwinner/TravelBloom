@@ -3,6 +3,7 @@
 
 {% block section %}
 <style>
+	/* Hero Section */
 	.hero-section {
 		background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url("{% static 'images/elements_background.jpg' %}") center center / cover no-repeat;
 		height: 90vh;
@@ -18,13 +19,10 @@
 		font-weight: 700;
 		animation: fadeInDown 1s ease-in-out;
 	}
-
 	.hero-content p {
 		font-size: 1.4rem;
-		/* margin-top: 20px; */
 		animation: fadeInUp 1s ease-in-out;
 	}
-
 	.hero-content .btn {
 		margin-top: 30px;
 		padding: 12px 30px;
@@ -33,32 +31,19 @@
 	}
 
 	@keyframes fadeInDown {
-		from {
-			transform: translateY(-30px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
+		from { transform: translateY(-30px); opacity: 0; }
+		to { transform: translateY(0); opacity: 1; }
 	}
-
 	@keyframes fadeInUp {
-		from {
-			transform: translateY(30px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
+		from { transform: translateY(30px); opacity: 0; }
+		to { transform: translateY(0); opacity: 1; }
 	}
 
+	/* Features Section */
 	.features-section {
 		padding: 60px 0;
 		background-color: #f9f9f9;
 	}
-
 	.feature-box {
 		text-align: center;
 		padding: 30px;
@@ -67,17 +52,129 @@
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 		transition: transform 0.3s ease;
 	}
-
 	.feature-box:hover {
 		transform: translateY(-10px);
 	}
+	.feature-box .circle-icon {
+		width: 70px;
+		height: 70px;
+		border-radius: 50%;
+		background-color: #f0f0f0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+		margin: 0 auto 20px auto;
+		transition: all 0.4s ease;
+	}
+	.feature-box:hover .circle-icon {
+		background-color: #e6e6ff;
+	}
+	.circle-icon i {
+		transition: transform 0.4s ease;
+	}
+	.feature-box:hover .circle-icon i,
+	.stat-item:hover .circle-icon i {
+		transform: scale(1.2) rotate(5deg);
+		color: #000;
+	}
 
-	.cta-section {
-		background: -moz-linear-gradient(#e4551d,#542091);
-		/* color: white; */
-		padding: 60px 20px;
+	/* Stats Section */
+	.stats-section {
+		padding: 60px 0;
+		background-color: #ffffff;
 		text-align: center;
 	}
+	.stat-item {
+		transition: transform 0.4s ease, box-shadow 0.4s ease;
+		padding: 25px;
+		border-radius: 15px;
+		background-color: #ffffff;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+		position: relative;
+		overflow: hidden;
+	}
+	.stat-item:hover {
+		transform: translateY(-10px) scale(1.02);
+		box-shadow: 0 16px 30px rgba(0, 0, 0, 0.1);
+		background-color: #fafafa;
+	}
+	.stat-item::before {
+		content: '';
+		position: absolute;
+		top: -50%;
+		left: -50%;
+		width: 200%;
+		height: 200%;
+		background: radial-gradient(circle, rgba(255,255,255,0.1), transparent);
+		transform: rotate(25deg);
+		opacity: 0;
+		transition: opacity 0.5s;
+	}
+	.stat-item:hover::before {
+		opacity: 1;
+	}
+	.stat-item h2 {
+		font-size: 2.5rem;
+		margin: 0;
+	}
+	.stat-item p {
+		margin: 0;
+		font-size: 1rem;
+		color: #666;
+	}
+	.stat-item .circle-icon {
+		width: 70px;
+		height: 70px;
+		border-radius: 50%;
+		background-color: #f0f0f0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0 auto 20px auto;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		transition: all 0.4s ease;
+	}
+	.stat-item:hover .circle-icon {
+		transform: scale(1.1) rotate(5deg);
+		background-color: #e6e6ff;
+	}
+	.stat-item:hover i {
+		animation: bounceIcon 0.6s ease;
+	}
+	@keyframes bounceIcon {
+		0%   { transform: scale(1); }
+		50%  { transform: scale(1.3); }
+		100% { transform: scale(1); }
+	}
+
+	/* CTA Section */
+	.cta-section {
+		background: linear-gradient(#483AA0, #2d0e4e);
+		padding: 60px 20px;
+		text-align: center;
+		color: white;
+	}
+
+	/* Fade-in animation */
+	.animate-up {
+		opacity: 0;
+		transform: translateY(20px);
+		transition: all 0.8s ease-out;
+	}
+	.animate-up.visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	.stats-section {
+  padding: 60px 0;
+  background-color: #f2f2f2 !important;  /* light gray to test */
+  color: #222 !important;
+}
+.stat-item p, .stat-item h2 {
+  color: #222 !important;
+}
 </style>
 
 <!-- Hero Section -->
@@ -85,7 +182,11 @@
 	<div class="hero-content">
 		<h1>Discover. Document. Relive.</h1>
 		<p>Capture your travel memories, from words to places, in one beautiful diary.</p>
-		<a href="{% url 'planner' %}" class="btn btn-light">Start Your Journey</a>
+		{% if request.user.is_authenticated %}
+			<a href="{% url 'planner' %}" class="btn btn-light">Start Your Journey</a>
+		{% else %}
+			<a href="{% url 'login' %}" class="btn btn-light">Start Your Journey</a>
+		{% endif %}
 	</div>
 </div>
 
@@ -101,21 +202,27 @@
 		<div class="row g-4">
 			<div class="col-md-4">
 				<div class="feature-box">
-					<i class="fas fa-pen-nib fa-2x text-primary mb-3"></i>
+					<div class="circle-icon">
+						<i class="fas fa-pen-nib fa-2x text-primary"></i>
+					</div>
 					<h4>Write Daily Journals</h4>
 					<p>Pen your thoughts, plans, and reflections on every journey you take.</p>
 				</div>
 			</div>
 			<div class="col-md-4">
 				<div class="feature-box">
-					<i class="fas fa-camera-retro fa-2x text-success mb-3"></i>
+					<div class="circle-icon">
+						<i class="fas fa-camera-retro fa-2x text-success"></i>
+					</div>
 					<h4>Add Media Memories</h4>
 					<p>Attach photos, videos & voice notes that bring your experiences to life.</p>
 				</div>
 			</div>
 			<div class="col-md-4">
 				<div class="feature-box">
-					<i class="fas fa-map-marker-alt fa-2x text-danger mb-3"></i>
+					<div class="circle-icon">
+						<i class="fas fa-map-marker-alt fa-2x text-danger"></i>
+					</div>
 					<h4>Map Your Locations</h4>
 					<p>Drop pins to remember where each entry was made — beautifully visualized.</p>
 				</div>
@@ -124,12 +231,64 @@
 	</div>
 </section>
 
-<!-- Call to Action -->
-<div class="cta-section" style="background: linear-gradient(#e4551d,#2d0e4e);">
+<!-- Stats Section -->
+<section class="stats-section">
+	<div class="container">
+		<div class="row text-center justify-content-center">
+			<div class="col-md-4 col-lg-3 stat-item mx-3">
+				<div class="circle-icon mb-3 mx-auto">
+					<i class="fas fa-users text-primary"></i>
+				</div>
+				<h2>1256</h2>
+				<p>Total Users</p>
+			</div>
+			<div class="col-md-4 col-lg-3 stat-item mx-3">
+				<div class="circle-icon mb-3 mx-auto">
+					<i class="fas fa-download text-success"></i>
+				</div>
+				<h2>8934</h2>
+				<p>Downloads</p>
+			</div>
+			<div class="col-md-4 col-lg-3 stat-item mx-3">
+				<div class="circle-icon mb-3 mx-auto">
+					<i class="fas fa-star text-warning"></i>
+				</div>
+				<h2>4.9</h2>
+				<p>Average Rating</p>
+			</div>
+		</div>
+	</div>
+</section>
+
+
+<!-- CTA Section -->
+<div class="cta-section">
 	<div class="container">
 		<h2>Turn Your Travel Into Timeless Stories</h2>
-		<p class="">With TravelBloom, your adventure is always just a scroll away.</p>
-		<a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Get Started Now</a>
+		<p>With TravelBloom, your adventure is always just a scroll away.</p>
+		<a href="{% url 'diary-list' %}" class="btn btn-outline-light btn-lg">Get Started Now</a>
 	</div>
 </div>
+
+<!-- CountUp JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.min.js"></script>
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		new CountUp('user-count', 5623).start();
+		new CountUp('download-count', 12489).start();
+		new CountUp('rating-count', 4.8, { decimalPlaces: 1 }).start();
+
+		const animatedItems = document.querySelectorAll('.animate-up');
+		const observer = new IntersectionObserver(entries => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					entry.target.classList.add('visible');
+					observer.unobserve(entry.target);
+				}
+			});
+		}, { threshold: 0.1 });
+
+		animatedItems.forEach(item => observer.observe(item));
+	});
+</script>
 {% endblock %}

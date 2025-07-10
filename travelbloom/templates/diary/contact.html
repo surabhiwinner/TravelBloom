@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block section %}
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col text-center">
+            <h2 class="text-primary">Contact Us</h2>
+            <p>We’d love to hear from you! Fill out the form and we’ll get back to you as soon as possible.</p>
+        </div>
+    </div>
+
+    <div class="row g-5">
+        <!-- Contact Form -->
+        <div class="col-md-7">
+            <form method="post" action="{% url 'contact' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="name" class="form-label">Your Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Your Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="message" class="form-label">Your Message</label>
+                    <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="col-md-5">
+            <div class="mb-4">
+                <h5 class="text-primary"><i class="fas fa-map-marker-alt me-2"></i>Our Office</h5>
+                <p>123 SmartVoyager Street, Wanderland, India</p>
+            </div>
+            <div class="mb-4">
+                <h5 class="text-primary"><i class="fas fa-phone me-2"></i>Call Us</h5>
+                <p>+91 98765 43210</p>
+            </div>
+            <div class="mb-4">
+                <h5 class="text-primary"><i class="fas fa-envelope me-2"></i>Email</h5>
+                <p>support@smartvoyager.com</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional Google Map -->
+    <div class="row mt-5">
+        <div class="col">
+            <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3770.6013439302276!2d72.8777!3d19.0760!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b63b0b8cfecb%3A0x10cbb5c6d6f8fca3!2sMumbai%2C%20India!5e0!3m2!1sen!2sin!4v1615950657655!5m2!1sen!2sin"
+                width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

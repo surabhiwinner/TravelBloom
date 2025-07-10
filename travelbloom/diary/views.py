@@ -181,3 +181,21 @@ class ChatMessageView(View):
         
         return JsonResponse({'response' : bot_response})
     
+
+class ContactView(View):
+
+    def get(self, request, *args, **kwargs):
+
+
+        return render(request, 'diary/contact.html',context={'page' : 'contact-page'})
+
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        message = request.POST.get("message")
+
+        # Optional: Store/save/send email/etc.
+        print(f"Contact form submitted by {name} ({email}): {message}")
+
+        messages.success(request, "Thank you for contacting us. We'll get back to you soon.")
+        return redirect('contact')
