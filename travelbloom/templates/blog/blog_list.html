@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load dict_extras %}
+{% block section %}
+<div class="container my-5">
+  <h2 class="text-primary mb-4">🌍 Travel Blogs</h2>
+
+  {% if user.is_authenticated %}
+  <div class="row mb-5">
+    <div class="mx-auto col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title mb-3 text-center text-primary">✍️ Share Your Travel Story</h5>
+          <form method="post" enctype="multipart/form-data" action="{% url 'blog-list' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              {{ form.title.label_tag }}
+              {{ form.title }}
+              {% if form.title.errors %}
+                <div class="text-danger small">{{ form.title.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="mb-3">
+              {{ form.content.label_tag }}
+              {{ form.content }}
+              {% if form.content.errors %}
+                <div class="text-danger small">{{ form.content.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="mb-3">
+              {{ form.image.label_tag }}
+              {{ form.image }}
+              {% if form.image.errors %}
+                <div class="text-danger small">{{ form.image.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="text-center">
+              <button type="submit" class="btn btn-success w-100">Post Blog</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if blogs %}
+  <div class="row">
+    {% for blog in blogs %}
+    <div class="col-md-6 mb-4">
+      <div class="card h-100 shadow-sm border-0">
+        {% if blog.image %}
+        <img src="{{ blog.image.url }}" class="card-img-top" style="max-height: 300px; object-fit: cover;" alt="{{ blog.title }}">
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{ blog.title }}</h5>
+          <p class="text-muted small mb-2">
+            By {{ blog.author }} &middot; {{ blog.created_at|date:"M d, Y" }}
+          </p>
+          <p class="card-text">{{ blog.content|truncatewords:30 }}</p>
+
+          {% if user.is_authenticated %}
+          <!-- AJAX Like Button -->
+          <div class="mb-2">
+            <button type="button"
+        id="like-btn-{{ blog.id }}"
+        onclick="toggleLike({{ blog.id }})"
+        class="btn btn-outline-primary btn-sm">
+  {% if user_likes|dict_key:blog.id %}
+  💔 Unlike
+{% else %}
+  ❤️ Like
+{% endif %}
+
+</button>
+
+            <span id="like-count-{{ blog.id }}">({{ blog.likes.count }})</span>
+          </div>
+
+          <!-- Comment Form -->
+          <form method="post" action="{% url 'add-blog-comment' blog.id %}" class="mb-2">
+            {% csrf_token %}
+            <textarea name="comment" class="form-control mb-2" rows="2" placeholder="Add a comment..."></textarea>
+            <button type="submit" class="btn btn-outline-secondary btn-sm">💬 Comment</button>
+          </form>
+          {% endif %}
+
+          <!-- Comments Section -->
+          {% if blog.comments.exists %}
+          <div class="mt-3">
+            <h6 class="text-muted">Comments:</h6>
+            {% for comment in blog.comments.all %}
+            <div class="border rounded p-2 mb-2">
+              <strong>{{ comment.user }}</strong>
+              <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+              <p class="mb-0">{{ comment.comment }}</p>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center">No blog posts yet. Be the first to share your story!</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleLike(blogId) {
+    fetch(`/blogs/like/${blogId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network error');
+        return response.json();
+    })
+    .then(data => {
+        const likeBtn = document.getElementById(`like-btn-${blogId}`);
+        const likeCount = document.getElementById(`like-count-${blogId}`);
+        if (data.liked) {
+            likeBtn.innerText = '💔 Unlike';
+        } else {
+            likeBtn.innerText = '❤️ Like';
+        }
+        likeCount.innerText = `(${data.total_likes})`;
+    })
+    .catch(err => console.error('AJAX like failed:', err));
+}
+
+function getCSRFToken() {
+    const name = 'csrftoken';
+    return document.cookie.split('; ').find(row => row.startsWith(name + '='))?.split('=')[1];
+}
+</script>
+{% endblock %}
