@@ -113,6 +113,22 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
+
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

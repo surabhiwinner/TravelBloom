@@ -5,9 +5,12 @@ from explore.models import BaseClass
 
 class BlogPost(BaseClass):
     author = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='posts')
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200,null=True,blank=True)
     content = models.TextField()
     image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
+
+    caption = models.TextField(null=True, blank=True)     # AI generated
+    hashtags = models.TextField(null=True, blank=True)    # AI generated
 
     def __str__(self):
         return self.title

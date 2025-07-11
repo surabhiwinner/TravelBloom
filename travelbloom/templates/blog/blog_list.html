@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load dict_extras %}
+{% load dict_extras split_filters %}
 
 {% block section %}
 <div class="container my-5">
@@ -11,11 +11,26 @@
       <div class="card shadow-sm">
         <div class="card-body">
           <h5 class="card-title mb-3 text-center text-primary">✍️ Share Your Travel Story</h5>
+
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            <strong>There were errors in your submission:</strong>
+            <ul>
+              {% for field in form %}
+                {% for error in field.errors %}
+                  <li>{{ field.label }}: {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
           <form method="post" enctype="multipart/form-data" action="{% url 'blog-list' %}">
             {% csrf_token %}
             <div class="mb-3">
               {{ form.title.label_tag }}
               {{ form.title }}
+              <small class="form-text text-muted">Optional — will be auto-generated from the image if left blank.</small>
             </div>
             <div class="mb-3">
               {{ form.content.label_tag }}
@@ -41,39 +56,49 @@
     <div class="col-md-6 mb-4">
       <div class="card h-100 shadow-sm border-0">
         {% if blog.image %}
-        <img src="{{ blog.image.url }}" class="card-img-top" style="max-height: 300px; object-fit: cover;" alt="{{ blog.title }}">
+        <img src="{{ blog.image.url }}" class="card-img-top" style="max-height: 300px; object-fit: cover;" alt="{{ blog.caption|default:blog.title }}">
         {% endif %}
+
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-2">
-  <h5 class="card-title mb-0">{{ blog.title }}</h5>
+            <h5 class="card-title mb-0">{{ blog.title }}</h5>
 
-  {% if user.profile == blog.author %}
-  <!-- Three Dots Dropdown -->
-  <div class="dropdown text-end">
-    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-      <i class="bi bi-three-dots-vertical"></i> <!-- Optional Bootstrap icon -->
-      ⋮
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end">
-      <li>
-        <form method="post" action="{% url 'delete-blog-post' blog.id %}">
-          {% csrf_token %}
-          <button type="submit" class="dropdown-item text-danger">🗑️ Delete Post</button>
-        </form>
-      </li>
-    </ul>
-  </div>
-  {% endif %}
-</div>
-
+            {% if user.is_authenticated and user.profile == blog.author %}
+            <div class="dropdown text-end">
+              <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                ⋮
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <form method="post" action="{% url 'delete-blog-post' blog.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-danger">🗑️ Delete Post</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+            {% endif %}
+          </div>
 
           <p class="text-muted small mb-2">
             By {{ blog.author }} • {{ blog.created_at|date:"M d, Y" }}
           </p>
+
+          {% if blog.caption %}
+          <p class="text-muted fst-italic">🧠 Caption: "{{ blog.caption }}"</p>
+          {% endif %}
+
+          {% if blog.hashtags %}
+          <p>
+            {% for tag in blog.hashtags|split %}
+  <span class="badge bg-primary">#{{ tag }}</span>
+{% endfor %}
+          </p>
+          {% endif %}
+
           <p class="card-text">{{ blog.content|truncatewords:30 }}</p>
 
           {% if user.is_authenticated %}
-          <!-- AJAX Like -->
           <div class="mb-2">
             <button type="button"
                     id="like-btn-{{ blog.id }}"
@@ -94,6 +119,8 @@
             <textarea name="comment" class="form-control mb-2" rows="2" placeholder="Add a comment..."></textarea>
             <button type="submit" class="btn btn-outline-secondary btn-sm">💬 Comment</button>
           </form>
+          {% else %}
+          <p class="text-muted">Login to like or comment.</p>
           {% endif %}
 
           <!-- Comments -->
@@ -107,7 +134,7 @@
                 <small class="text-muted d-block">{{ comment.created_at|date:"M d, Y H:i" }}</small>
                 <p class="mb-0">{{ comment.comment }}</p>
               </div>
-              {% if user.profile == comment.user %}
+              {% if user.is_authenticated and user.profile == comment.user %}
               <form method="post" action="{% url 'delete-blog-comment' comment.id %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-outline-danger ms-2">🗑️</button>
