@@ -229,7 +229,7 @@
                         
 
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'blog-page' %}text-white {% else %} text-primary{% endif %}" href="#">Blog</a>
+                            <a class="nav-link {% if page == 'blog-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'blog-list' %}">Blog</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'contact-page' %}text-white{% else %} text-primary{% endif %}" href="{% url 'contact' %}">Contact</a>
@@ -249,6 +249,8 @@
                         </div>
                         {% endif %}
                         {% endif %}
+
+                        
                     </ul>
                 </div>
             </div>

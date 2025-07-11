@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'diary',
     'widget_tweaks',
     'chatbot',
-
+    'blog',
+    
     
 
 ]
