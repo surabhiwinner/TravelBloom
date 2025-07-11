@@ -45,6 +45,7 @@ def generate_caption_and_hashtags(image_path):
 
         logger.info(f"Generated Caption: {caption}")
         logger.info(f"Hashtags: {hashtags}")
+        logger.info(f"Image path for captioning: {image_path}")
 
         return caption, hashtags
 

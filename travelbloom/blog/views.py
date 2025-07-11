@@ -19,41 +19,44 @@ class BlogListCreateView(View):
         form = BlogPostForm()
         return render(request, "blog/blog_list.html", {"blogs": blogs, "form": form})
 
-   def post(self, request):
-    if not request.user.is_authenticated:
-        return redirect("login")
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return redirect("login")
 
-    form = BlogPostForm(request.POST, request.FILES)
-    if form.is_valid():
-        blog = form.save(commit=False)
-        blog.author = request.user.profile  # Ensure you're using Profile
+        form = BlogPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            blog = form.save(commit=False)
+            blog.author = request.user
 
-        if blog.image:
-            try:
-                caption, hashtags = generate_caption_and_hashtags(blog.image.path)
-                logger.info(f"[AI Captioning] Caption: {caption}")
-                logger.info(f"[AI Captioning] Hashtags: {hashtags}")
-                blog.caption = caption
-                blog.hashtags = ", ".join(hashtags)
+            blog.save()  # Save first to get blog.image.path
 
-                # Use AI caption as title if not manually given
-                if not blog.title:
-                    blog.title = caption
-            except Exception as e:
-                logger.error(f"[AI Captioning] Failed: {e}")
-                if not blog.title:
-                    blog.title = "Untitled"
+            if blog.image:
+                try:
+                    caption, hashtags = generate_caption_and_hashtags(blog.image.path)
+                    logger.info(f"[AI Captioning] Caption: {caption}")
+                    logger.info(f"[AI Captioning] Hashtags: {hashtags}")
+                    blog.caption = caption
+                    blog.hashtags = ", ".join(hashtags)
 
-        # Ensure there's always a title
-        if not blog.title:
-            blog.title = "Untitled"
+                    # Set title only if not given
+                    if not blog.title or blog.title.strip() == "":
+                        blog.title = caption
 
-        blog.save()
-        return redirect("blog-list")
+                except Exception as e:
+                    logger.error(f"[AI Captioning] Failed: {e}")
+                    if not blog.title:
+                        blog.title = "Untitled"
 
-    # If form is invalid, re-render with errors
-    blogs = BlogPost.objects.filter(active_status=True).order_by('-created_at')
-    return render(request, "blog/blog_list.html", {"blogs": blogs, "form": form})
+            # Ensure fallback title
+            if not blog.title:
+                blog.title = "Untitled"
+
+            blog.save()  # Save again after caption/hashtags
+            return redirect("blog-list")
+
+        # Re-render if invalid
+        blogs = BlogPost.objects.filter(active_status=True).order_by('-created_at')
+        return render(request, "blog/blog_list.html", {"blogs": blogs, "form": form})
 
 @method_decorator(login_required, name='dispatch')
 class BlogLikeToggleView(View):
