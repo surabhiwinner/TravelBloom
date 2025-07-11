@@ -86,3 +86,19 @@ class AddCommentView(View):
             )
 
         return redirect(request.META.get("HTTP_REFERER", "blog-list"))
+    
+class DeleteBlogPostView( View):
+    def post(self, request, pk):
+        blog = get_object_or_404(BlogPost, pk=pk)
+        if blog.author.user == request.user:  # assuming blog.author is a Profile
+            blog.delete()
+        return redirect('blog-list')
+
+
+class DeleteBlogCommentView( View):
+    def post(self, request, pk):
+        comment = get_object_or_404(BlogComment, pk=pk)
+        if comment.user.user == request.user:  # assuming comment.user is a Profile
+            comment.delete()
+        return redirect(request.META.get('HTTP_REFERER', 'blog-list'))
+

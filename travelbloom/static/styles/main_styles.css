@@ -145,15 +145,7 @@ h1, h2, h3, h4, h5, h6
 	-webkit-text-shadow: rgba(0,0,0,.01) 0 0 1px;
 	text-shadow: rgba(0,0,0,.01) 0 0 1px;
 }
-h1::selection, 
-h2::selection, 
-h3::selection, 
-h4::selection, 
-h5::selection, 
-h6::selection
-{
-	
-}
+
 
 /* Ensure header stays on top */
 .header {
@@ -518,7 +510,7 @@ section
 .main_nav_item a
 {
 	font-family: 'Open Sans', sans-serif;
-	font-size: 13px;
+	font-size: 15px;
 	font-weight: 600;
 	color: #FFFFFF;
 	text-transform: uppercase;
@@ -579,6 +571,10 @@ section
 .content_search:hover .mag_glass
 {
 	fill: #fa9e1c;
+}
+.navbar-custom {
+  background-color: rgba(0, 0, 0, 0.85); /* Adjust alpha for transparency */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Optional: drop shadow */
 }
 .search_form
 {

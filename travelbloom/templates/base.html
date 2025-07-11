@@ -21,9 +21,18 @@
     <link rel="stylesheet" type="text/css" href="/static/styles/main_styles.css">
     <link rel="stylesheet" type="text/css" href="/static/styles/responsive.css">
 
+<!-- Bootstrap CSS (in <head>) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap JS Bundle (before </body>) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- FontAwesome -->
     <!-- FontAwesome v6 (latest) -->
@@ -41,6 +50,9 @@
 <body>
 
 <style>
+  .navbar-custom-bg {
+  background-color: rgba(0, 0, 0, 0); /* dark with slight transparency */
+}
 .social_list {
   padding: 0;
   margin: 0;
@@ -155,7 +167,7 @@
 
     <!-- Header -->
     <header class="header">
-        <div class="top_bar">
+        <div class="top_bar" style="background-color: #11062e;">
             <div class="container">
                 <div class="row">
                     <div class="col d-flex flex-row">
@@ -178,7 +190,7 @@
         </div>
 
         <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg">
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom" style="background-color: #340f6e;">
             <div class="container">
                 <a class="navbar-brand" href="#">
                     <img src="/static/images/logo.png" alt="Logo" style="height: 30px;"> SmartVoyager
@@ -192,17 +204,17 @@
                 <div class="collapse navbar-collapse" id="mainNavbar">
                     <ul class="navbar-nav ms-auto d-flex align-items-center gap-3">
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'home-page' %}text-white {% else %}text-primary{% endif %}" href="{% url 'home' %}">Home</a>
+                            <a class="nav-link {% if page == 'home-page' %}text-white {% else %}fw-bold text-secondary{% endif %}" href="{% url 'home' %}">Home</a>
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'map-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'map' %}">Map</a>
+                            <a class="nav-link {% if page == 'map-page' %}text-white {% else %}fw-bold text-secondary{% endif %}" href="{% url 'map' %}">Map</a>
                         </li>
 
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'diary-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'diary-list' %}">Diary</a>
+                            <a class="nav-link {% if page == 'diary-page' %}text-white {% else %}fw-bold text-secondary{% endif %}" href="{% url 'diary-list' %}">Diary</a>
                         </li>
                         
                         {% endif %}
@@ -212,7 +224,7 @@
                          {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'planner-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
+                            <a class="nav-link {% if page == 'planner-page' %}text-white {% else %}fw-bold text-secondary{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
                         </li>
                        
                         {% endif %}
@@ -221,7 +233,7 @@
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'your-trip-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>
+                            <a class="nav-link {% if page == 'your-trip-page' %}text-white {% else %} fw-bold text-secondary{% endif %}" href="{% url 'your-trip' %}">Your Trip</a>
                         </li>
                         
                         {% endif %}
@@ -229,10 +241,10 @@
                         
 
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'blog-page' %}text-white {% else %} text-primary{% endif %}" href="{% url 'blog-list' %}">Blog</a>
+                            <a class="nav-link {% if page == 'blog-page' %}text-white {% else %} fw-bold text-secondary{% endif %}" href="{% url 'blog-list' %}">Blog</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'contact-page' %}text-white{% else %} text-primary{% endif %}" href="{% url 'contact' %}">Contact</a>
+                            <a class="nav-link {% if page == 'contact-page' %}text-white{% else %} fw-bold text-secondary{% endif %}" href="{% url 'contact' %}">Contact</a>
                         </li>
 
                         {% if request.user.is_authenticated %}
@@ -241,10 +253,10 @@
                         <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" data-bs-toggle="dropdown">
                                 <img src="/media/Traveller-imags/user.png" class="rounded-circle me-2" style="width: 30px; height: 30px;">
-                                <p class="text-primary {%if active %} text-white{% endif %} ms-1 mb-0">{{ user }}</p>
+                                <p class="fw-bold text-white ms-1 mb-0">{{ user.first_name }} {{user.last_name}}</p>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                                <li><a class="dropdown-item " style="color: #11062e;" href="{% url 'logout' %}">Logout</a></li>
                             </ul>
                         </div>
                         {% endif %}
@@ -260,7 +272,7 @@
     {% block section %}{% endblock %}
 
     <!-- Footer -->
-    <footer class="footer" style="background: -moz-linear-gradient(#e4551d, #6b3019);">
+    <footer class="footer" style="background-color: #340f6e;">
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
