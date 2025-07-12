@@ -1,127 +1,157 @@
-{% extends "base.html" %}
 {% load static %}
 {% block section %}
 
 <!-- 📍 MAP -->
 <div class="container mt-5">
-    <h2 class="mb-4">Nearby Tourist Attractions</h2>
-    <div id="map" style="height:400px;width:100%;border-radius:10px;"></div>
+  <h2 class="mb-4">Nearby Tourist Attractions</h2>
+  <div id="map" style="height:400px;width:100%;border-radius:10px;"></div>
 </div>
 
-<!-- 🎠 SLIDER -->
+<!-- 🌍 Tourist Spots Slider -->
 <div class="container mt-5">
-    <h4 class="mb-3">Tourist Spots Around You</h4>
-    <div class="swiper mySwiper">
-        <div class="swiper-wrapper" id="places-list"></div>
-        <div class="swiper-button-next"></div>
-        <div class="swiper-button-prev"></div>
-    </div>
+  <h4 class="mb-3">Places Around You</h4>
+  <div class="swiper mySwiper">
+    <div class="swiper-wrapper" id="places-list"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+  </div>
 </div>
 
-<!-- Swiper -->
+<!-- ✅ Swiper CSS + JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-<!-- Google Maps JS + Places (New) -->
-<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=beta&callback=initMap" async defer></script>
+<!-- ✅ Google Maps JS -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAbSSS6NtpW6Zx3czxf2M3GTRwG5v4I6YQ&v=beta&callback=initMap" async defer></script>
 
 <script>
 let map;
 
 async function initMap () {
-  /* ---- import the new modular libraries ---- */
-  const { Map }                = await google.maps.importLibrary('maps');
+  const { Map } = await google.maps.importLibrary('maps');
   const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
-  const { Place }              = await google.maps.importLibrary('places');
+  const { Place } = await google.maps.importLibrary('places');
 
-  /* ---- get user position (high accuracy) ---- */
   const location = await getUserLocation();
-  console.log('📍 Centring map at', location);
+  console.log("📍 Map centered at:", location);
 
-  /* ---- init map & centre on user ---- */
+  // Initialize map
   map = new Map(document.getElementById('map'), {
     center: location,
-    zoom: 15,                    // city‑level
-    mapId: '995bf07e5e9b252015e55248'  // your custom map style ID
+    zoom: 13,
+    mapId: '995bf07e5e9b252015e55248'
   });
 
+  // User's location marker
   new AdvancedMarkerElement({ map, position: location, title: 'You are here' });
 
-  /* ---- fetch nearby tourist attractions ---- */
+  // Search nearby tourist attractions within 50 km
   const { places } = await Place.searchNearby({
-    locationRestriction: { center: location, radius: 5000 },
-    includedPrimaryTypes: ['tourist_attraction'],
-    maxResultCount: 10
+    locationRestriction: {
+      center: location,
+      radius: 50000
+    },
+    includedPrimaryTypes: [
+      'tourist_attraction',
+      'museum',
+      'park',
+      'art_gallery',
+      'zoo',
+      'amusement_park'
+    ],
+    maxResultCount: 10,
+    fields: [
+      'id',
+      'displayName',
+      'formattedAddress',
+      'location',
+      'photos',
+      'rating',
+      'userRatingCount'
+    ]
   });
 
+  const wrapper = document.getElementById('places-list');
+  wrapper.innerHTML = "";
+
   if (!places?.length) {
-    console.warn('⚠️ No tourist places found nearby.');
+    wrapper.innerHTML = "<p>No tourist attractions found within 50 km.</p>";
     return;
   }
 
-  const wrapper = document.getElementById('places-list');
+  console.log("✅ Places returned:", places);
 
-  for (const place of places) {
-    const data = place;                 // already fully populated object
+  for (const data of places) {
+    const title = data.displayName?.text || 'Unknown';
+    const address = data.formattedAddress || 'No address';
+    const rating = data.rating ? `${data.rating} ★` : 'No rating';
+    const reviews = data.userRatingCount ? `${data.userRatingCount} reviews` : '';
 
-    /* map marker */
+    // ✅ FIXED: Extract valid photo_reference from "places/..." string
+    const photoRef = data.photos?.[0]?.name?.split('/').pop();
+    const image = photoRef
+      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=AIzaSyAbSSS6NtpW6Zx3czxf2M3GTRwG5v4I6YQ`
+      : 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/300px-No_image_available.svg.png';
+
+    // Add marker
     new AdvancedMarkerElement({
       map,
       position: data.location,
-      title: data.displayName?.text || 'Tourist Spot'
+      title: title
     });
 
-    /* card contents */
-    const image   = data.photos?.[0]?.getURL() || 'https://via.placeholder.com/300';
-    const title   = data.displayName?.text || 'Unknown';
-    const address = data.formattedAddress || 'No address';
-    const rating  = data.rating ? `${data.rating} ★` : 'No rating';
-    const reviews = data.userRatingCount ? `${data.userRatingCount} reviews` : '';
-    const hours   = data.openingHours?.weekdayDescriptions?.join('<br>') || 'No timing info';
-
+    // Add card to slider
     wrapper.insertAdjacentHTML('beforeend', `
       <div class="swiper-slide">
-        <div class="card shadow-sm" style="width:300px;">
-          <img src="${image}" class="card-img-top" alt="${title}">
+        <div class="card shadow-sm h-100" style="width: 300px;">
+          <img src="${image}" class="card-img-top" alt="${title}" style="height: 200px; object-fit: cover;">
           <div class="card-body">
             <h5 class="card-title">${title}</h5>
             <p class="card-text"><strong>📍</strong> ${address}</p>
             <p class="text-muted small">⭐ ${rating} &nbsp; ${reviews}</p>
-            <p class="small">${hours}</p>
-            <a href="${data.googleMapsUri}" target="_blank"
-               class="btn btn-sm btn-outline-primary">View on Google Maps</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}"
+               target="_blank" class="btn btn-sm btn-outline-primary">View on Google Maps</a>
           </div>
         </div>
       </div>
     `);
   }
 
-  /* ---- init Swiper after cards exist ---- */
+  // Initialize Swiper
   new Swiper('.mySwiper', {
     slidesPerView: 1,
     spaceBetween: 20,
-    breakpoints: { 640: {slidesPerView: 2}, 1024: {slidesPerView: 3} },
-    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }
+    breakpoints: {
+      640: { slidesPerView: 2 },
+      1024: { slidesPerView: 3 }
+    },
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev'
+    }
   });
 }
 
-/* getUserLocation: hi‑accuracy, 5‑s timeout, fallback to Thiruvananthapuram */
+// 📍 Get user's location
 function getUserLocation () {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
-      console.warn('❌ Geolocation not supported');
+      alert('Geolocation not supported. Showing default location.');
       return resolve({ lat: 8.5241, lng: 76.9366 });
     }
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        console.log('✅ User location:', pos.coords);
-        resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        console.log('✅ User location:', coords);
+        resolve(coords);
       },
       (err) => {
         console.warn('⚠️ Geolocation error:', err.message);
+        alert("Couldn't retrieve location. Showing default.");
         resolve({ lat: 8.5241, lng: 76.9366 });
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   });
 }
