@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block section %}
+<style>
+  .section-title {
+    font-size: 26px;
+    border-left: 6px solid #3498db;
+    padding-left: 10px;
+    margin: 30px 0 10px;
+    color: #34495e;
+  }
+
+  .gallery-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .gallery-item {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s;
+  }
+
+  .gallery-item:hover {
+    transform: scale(1.02);
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .caption {
+    padding: 12px;
+    font-size: 15px;
+    color: #333;
+  }
+
+  .timestamp {
+    font-size: 13px;
+    color: #777;
+    padding: 0 12px 12px;
+  }
+
+  .no-items {
+    color: #777;
+    padding: 10px;
+  }
+</style>
+
+
+<div class="container" style="padding: 20px;">
+
+  {% if user.is_authenticated %}
+    <h2 class="section-title">📔 My Diary Gallery</h2>
+    <div class="gallery-section">
+      {% for photo in diary_photos %}
+        <div class="gallery-item">
+          <img src="{{ photo.image.url }}" alt="Diary Photo">
+          <div class="caption">{{ photo.caption }}</div>
+          <div class="timestamp">Saved in {{ photo.created_at|date:"F Y" }}</div>
+        </div>
+      {% empty %}
+        <p class="no-items">You haven’t added any diary photos yet.</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <h2 class="section-title">🌐 Public Blog Gallery</h2>
+  <div class="gallery-section">
+    {% for post in blog_photos %}
+      <div class="gallery-item">
+        <img src="{{ post.image.url }}" alt="Blog Image">
+        <div class="caption">{{ post.caption }}</div>
+        <div class="timestamp">Posted in {{ post.created_at|date:"F Y" }}</div>
+      </div>
+    {% empty %}
+      <p class="no-items">No blog posts with images available yet.</p>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

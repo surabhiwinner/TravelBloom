@@ -14,6 +14,10 @@ import mimetypes
 
 from django.http import JsonResponse
 
+from diary.models import DiaryMedia
+
+from blog.models import BlogPost
+
 # Create your views here.
 
 
@@ -199,3 +203,20 @@ class ContactView(View):
 
         messages.success(request, "Thank you for contacting us. We'll get back to you soon.")
         return redirect('contact')
+
+
+class GalleryView(View):
+    def get(self, request):
+        if request.user.is_authenticated:
+            diary_photos = DiaryMedia.objects.filter(diary__profile=request.user).order_by('-created_at')
+        else:
+            diary_photos = []
+
+        blog_photos = BlogPost.objects.exclude(image='').order_by('-created_at')
+
+        context = {
+            'diary_photos': diary_photos,
+            'blog_photos': blog_photos,
+        }
+
+        return render(request, 'diary/gallery.html', context)
