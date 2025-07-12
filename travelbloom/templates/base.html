@@ -207,9 +207,9 @@
                             <a class="nav-link {% if page == 'home-page' %}text-white {% else %}fw-bold text-secondary{% endif %}" href="{% url 'home' %}">Home</a>
                         </li>
                         
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {% if page == 'map-page' %}text-white {% else %}fw-bold text-secondary{% endif %}" href="{% url 'map' %}">Map</a>
-                        </li>
+                        </li> -->
 
                         {% user_role_checking request 'Admin,User' as allow %}
                         {% if allow %}
