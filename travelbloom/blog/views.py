@@ -7,7 +7,7 @@ from authentication.models import Profile
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from .ai_utils import generate_caption_and_hashtags
-
+from django.contrib import messages
 import logging
 
 logger = logging.getLogger(__name__)
@@ -111,6 +111,25 @@ class DeleteBlogPostView(View):
 class DeleteBlogCommentView(View):
     def post(self, request, pk):
         comment = get_object_or_404(BlogComment, pk=pk)
-        if comment.user.user == request.user:
+        if comment.user == request.user or request.user.is_superuser:
             comment.delete()
+            messages.success(request, "Comment deleted successfully.")
+        else:
+            messages.error(request, "You're not authorized to delete this comment.")
         return redirect(request.META.get('HTTP_REFERER', 'blog-list'))
+
+
+
+class DeleteBlogPostView(View):
+    def post(self, request, pk):
+        blog = get_object_or_404(BlogPost, pk=pk)
+
+        # Check permission
+        if request.user == blog.author or request.user.is_superuser:
+            blog.delete()
+            messages.success(request, "Blog post deleted successfully.")
+        else:
+            messages.error(request, "You are not authorized to delete this blog post.")
+
+        return redirect('blog-list')
+
