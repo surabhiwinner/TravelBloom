@@ -87,29 +87,22 @@ class DiaryEntryWriteView(View):
 
 
 class DiaryListView(View):
-
-    def get(self , request , *args , **kwargs):
+    def get(self, request, *args, **kwargs):
+        diary_entries = DiaryEntry.objects.none()  # default empty queryset
 
         if request.user.is_authenticated:
-
-            diary_entries = DiaryEntry.objects.all()
-
             profile = request.user
-
             if profile.role == 'User':
-
                 diary_entries = DiaryEntry.objects.filter(profile=profile)
-            else:
+            elif profile.role =='Admin':
                 diary_entries = DiaryEntry.objects.all()
 
-
-
-
-        data = { 'diary_entries' : diary_entries,
-                'page' : 'diary-page'}
-
-        return render(request,'diary/entry_list_page.html',context=data)
-    
+        data = {
+            'diary_entries': diary_entries,
+            'page': 'diary-page'
+        }
+        return render(request, 'diary/entry_list_page.html', context=data)
+ 
 class DiaryEntryDetailView(View):
     def get(self, request, uuid):
         diary_entry = get_object_or_404(DiaryEntry, uuid=uuid)
@@ -220,3 +213,11 @@ class GalleryView(View):
         }
 
         return render(request, 'diary/gallery.html', context)
+
+
+class AboutPageView(View):
+    def get(self, request, *args, **kwargs):
+        context = {
+            "page": "about-page",  # optional for navbar highlighting
+        }
+        return render(request, 'diary/about.html', context)

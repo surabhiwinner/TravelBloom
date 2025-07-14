@@ -202,9 +202,17 @@
 		<div class="row g-4">
 			<div class="col-md-4">
 				<div class="feature-box">
+					{% if request.user.is_authenticated %}
 					<a href="{% url 'diary-list' %}"><div class="circle-icon">
 						<i class="fas fa-pen-nib fa-2x text-primary"></i>
 					</div></a>
+					{% else %}
+					<a href="{% url 'login' %}"><div class="circle-icon">
+						<i class="fas fa-pen-nib fa-2x text-primary"></i>
+					</div></a>
+					{% endif %}
+
+
 					<h4>Write Daily Journals</h4>
 					<p>Pen your thoughts, plans, and reflections on every journey you take.</p>
 				</div>

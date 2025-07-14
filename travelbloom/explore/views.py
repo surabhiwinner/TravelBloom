@@ -574,3 +574,93 @@ def check_trip_progress(request):
         "visited_places": visited,
         "all_visited": all_visited
     })
+
+
+
+# @method_decorator(csrf_exempt, name='dispatch')
+# class TripEditView(View):
+#     def post(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'error': 'Login required.'}, status=401)
+
+#         try:
+#             data = json.loads(request.body)
+#             uuid = data.get("uuid")
+#             name = data.get("name")
+#             city = data.get("city")
+#             place_ids = data.get("place_ids", [])
+
+#             if not uuid or not name or not city or not place_ids:
+#                 return JsonResponse({'error': 'Missing required fields.'}, status=400)
+
+#             trip = get_object_or_404(Trip, uuid=uuid, user=request.user)
+
+#             # Process places
+#             hotel_id = None
+#             hotel_lat = hotel_lng = None
+#             attraction_data = []
+
+#             for pid in place_ids:
+#                 result = get_place_detail(pid)
+#                 if not result:
+#                     continue
+#                 lat = result["geometry"]["location"]["lat"]
+#                 lng = result["geometry"]["location"]["lng"]
+#                 types = result.get("types", [])
+
+#                 is_lodging = "lodging" in types
+#                 is_hotel_keyword = any(word in result.get("name", "").lower() for word in ["hotel", "inn", "resort", "hostel", "homestay"])
+
+#                 if (is_lodging or is_hotel_keyword) and not hotel_id:
+#                     hotel_id = pid
+#                     hotel_lat = lat
+#                     hotel_lng = lng
+#                 else:
+#                     attraction_data.append({'place_id': pid, 'lat': lat, 'lng': lng})
+
+#             if not hotel_id:
+#                 return JsonResponse({'error': 'At least one hotel must be selected.'}, status=400)
+
+#             for place in attraction_data:
+#                 place['distance'] = haversine(hotel_lat, hotel_lng, place['lat'], place['lng'])
+
+#             attraction_data.sort(key=lambda x: x['distance'])
+
+#             ordered_place_ids = [hotel_id] + [a['place_id'] for a in attraction_data]
+
+#             coords = [(hotel_lat, hotel_lng)] + [(a['lat'], a['lng']) for a in attraction_data]
+#             total_distance = sum(haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]) for i in range(1, len(coords)))
+
+#             # Update trip
+#             trip.name = name
+#             trip.city = city
+#             trip.place_ids = ordered_place_ids
+#             trip.distance = round(total_distance, 2)
+#             trip.final_place_lat = coords[-1][0]
+#             trip.final_place_lng = coords[-1][1]
+#             trip.visited_places = []
+#             trip.save()
+
+#             return JsonResponse({"success": True, "trip_id": str(trip.uuid), "distance": round(total_distance, 2)})
+
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+
+
+# @method_decorator(login_required, name='dispatch')
+# class TripEditFormView(View):
+#     def get(self, request, uuid):
+#         trip = get_object_or_404(Trip, uuid=uuid, user=request.user)
+
+#         context = {
+#             "trip": trip,
+#             "page": "planner-edit-page",
+#             "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
+#             "place_ids": trip.place_ids,
+#             "city": trip.city,
+#             "name": trip.name,
+#         }
+#         return render(request, "explore/planner_edit.html", context)
+
+
+

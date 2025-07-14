@@ -171,7 +171,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col d-flex flex-row">
-                        <div class="phone">+45 345 3324 56789</div>
+                        <div class="phone">+91 345 3324 567</div>
                         <div class="social ml-auto">
   <ul class="social_list d-flex align-items-center">
     <li><a href="#"><i class="fab fa-facebook-f"></i></a></li>
@@ -181,9 +181,11 @@
     <li><a href="#"><i class="fab fa-pinterest-p"></i></a></li>
   </ul>
 </div>
+                      {%if not request.user.is_authenticated %}
                         <div class="user_box ml-4">
                             <a href="{% url 'login' %}">Login</a> / <a href="{% url 'register' %}">Register</a>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -276,21 +278,21 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="text-primary">About Travelix</h5>
+                    <h5 class="text-primary">About SmartVoyager</h5>
                     <p>Discover places. Record memories. Share journeys. Your digital travel diary starts here.</p>
                 </div>
                 <div class="col-md-4">
                     <h5 class="text-primary">Quick Links</h5>
                     <ul class="list-unstyled ">
-                        <li><a href="#" class="text-info">Home</a></li>
-                        <li><a href="about.html" class="text-info">About</a></li>
-                        <li><a href="offers.html" class="text-info">Offers</a></li>
-                        <li><a href="contact.html" class="text-info">Contact</a></li>
+                        <li><a href="{% url 'home' %}" class="text-info">Home</a></li>
+                        <li><a href="{% url 'about' %}" class="text-info">About</a></li>
+                        <li><a href="{% url 'build_route' %}" class="text-info">Trip Planner</a></li>
+                        <li><a href="{% url 'contact' %}" class="text-info">Contact</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
                     <h5 class="text-primary">Contact</h5>
-                    <p>Email: contact@travelix.com<br>Phone: +45 345 3324 56789</p>
+                    <p>Email: contact@smartVoyeger.com<br>Phone: +91 345 3324 567</p>
                 </div>
             </div>
         </div>
@@ -346,7 +348,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const chatToggle = document.getElementById("chat-toggle");
   const chatbox = document.getElementById("chatbox");
   const input = document.getElementById("chat-input");
-  const sendBtn = document.getElementById("chat-send");  // ❌ This ID does NOT exist in your HTML
+  const sendBtn = document.getElementById("chat-send");
   const messagesDiv = document.getElementById("chat-messages");
 
   let userLat = null;
@@ -358,9 +360,8 @@ document.addEventListener("DOMContentLoaded", function () {
     chatbox.style.display = (chatbox.style.display === "none" || chatbox.style.display === "") ? "flex" : "none";
   });
 
-  // ❌ FIX: sendBtn is null if its ID in HTML is wrong (use fallback listener on button below)
-  document.querySelector("#chatbox-footer button").addEventListener("click", sendChat);
-
+  // Send message on button click or Enter key
+  sendBtn.addEventListener("click", sendChat);
   input.addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -368,15 +369,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // ✅ Core send logic
   function sendChat() {
     const message = input.value.trim();
-    console.log("User input message:", message);
-
-    if (!message) {
-      console.log("Empty message, returning...");
-      return;
-    }
+    if (!message) return;
 
     messagesDiv.innerHTML += `<div><strong>You:</strong> ${message}</div>`;
     input.value = "";
@@ -386,41 +381,32 @@ document.addEventListener("DOMContentLoaded", function () {
       .find(row => row.startsWith("csrftoken="))
       ?.split("=")[1];
 
-    console.log("CSRF Token:", csrfToken);
-
     if (!locationFetched && navigator.geolocation) {
-      console.log("Fetching user location...");
       navigator.geolocation.getCurrentPosition(
         function (position) {
           userLat = position.coords.latitude;
           userLng = position.coords.longitude;
           locationFetched = true;
 
-          console.log("Location fetched:", userLat, userLng);
-
-          const locationInfo = `Latitude: ${userLat.toFixed(4)}, Longitude: ${userLng.toFixed(4)}`;
           const toastBody = document.getElementById("toastBody");
           if (toastBody) {
-            toastBody.innerText = `📍 Your location: ${locationInfo}`;
+            toastBody.innerText = `📍 Your location: Latitude ${userLat.toFixed(4)}, Longitude ${userLng.toFixed(4)}`;
             const toast = new bootstrap.Toast(document.getElementById("locationToast"));
             toast.show();
           }
 
           sendMessageToBot(message, csrfToken);
         },
-        function (error) {
-          console.warn("Error fetching location:", error);
+        function () {
           locationFetched = true;
           sendMessageToBot(message, csrfToken);
         }
       );
     } else {
-      console.log("Location already fetched or not available.");
       sendMessageToBot(message, csrfToken);
     }
   }
 
-  // ✅ Format bot responses into bullet points
   function formatBotResponse(response) {
     const lines = response.split(/\n|(?<=\.)\s+/);
     const filtered = lines.filter(line => line.trim().length > 0);
@@ -435,6 +421,18 @@ document.addEventListener("DOMContentLoaded", function () {
       formData.append("longitude", userLng);
     }
 
+    // ✅ Dynamic thinking message
+    const thinkingId = `thinking-${Date.now()}`;
+    const thinkingMessages = [
+      "🤔 Let me think a moment...",
+      "🧳 Planning your trip...",
+      "✈️ Searching great places for you...",
+      "📍 Finding the best spots..."
+    ];
+    const thinkingText = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+    messagesDiv.innerHTML += `<div id="${thinkingId}"><strong>Bot:</strong> ${thinkingText}</div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
     fetch("/chatbot/chat/", {
       method: "POST",
       headers: {
@@ -445,23 +443,25 @@ document.addEventListener("DOMContentLoaded", function () {
     })
       .then(res => res.json())
       .then(data => {
-        console.log("Bot response received:", data);
+        const thinkingDiv = document.getElementById(thinkingId);
         if (data.response) {
-          messagesDiv.innerHTML += `<div><strong>Bot:</strong> ${formatBotResponse(data.response)}</div>`;
+          thinkingDiv.innerHTML = `<strong>Bot:</strong> ${formatBotResponse(data.response)}`;
         } else if (data.error) {
-          messagesDiv.innerHTML += `<div><strong>Error:</strong> ${data.error}</div>`;
+          thinkingDiv.innerHTML = `<strong>Error:</strong> ${data.error}`;
         } else {
-          messagesDiv.innerHTML += `<div><strong>Error:</strong> Unknown error occurred.</div>`;
+          thinkingDiv.innerHTML = `<strong>Error:</strong> Unknown error occurred.`;
         }
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       })
       .catch(err => {
         console.error("Network error:", err);
-        messagesDiv.innerHTML += `<div><strong>Error:</strong> Network error</div>`;
+        const thinkingDiv = document.getElementById(thinkingId);
+        thinkingDiv.innerHTML = `<strong>Error:</strong> Network error`;
       });
   }
 });
 </script>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>

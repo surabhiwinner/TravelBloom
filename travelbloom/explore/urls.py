@@ -32,5 +32,11 @@ urlpatterns = [
 
     path('trip/<str:uuid>/', views.TripDetailView.as_view(), name='view-trip'),
     
+    # path('trip/edit/', views.TripEditView.as_view(), name='trip-edit'), #edit trip 
+
+    # path('trip/edit/<slug:uuid>/', views.TripEditFormView.as_view(), name='edit-trip-page'),
+
+
+
 
 ]
