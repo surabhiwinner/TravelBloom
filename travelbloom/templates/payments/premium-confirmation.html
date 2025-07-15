@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block section %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white text-center">
+          <h3 class="mb-0">Premium Access Confirmation</h3>
+        </div>
+
+        <div class="card-body">
+          {% if payment %}
+            <p class="text-success fw-semibold text-center">
+              🎉 Premium features successfully unlocked for <strong>{{ traveller.name }}</strong>!
+            </p>
+
+            <hr>
+
+            <h5 class="mb-3">Payment Summary</h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between">
+                <strong>Access Type:</strong>
+                <span>TravelBloom Premium</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <strong>Amount Paid:</strong>
+                <span><i class="fa-solid fa-indian-rupee-sign mt-1 me-1"></i>{{ payment.amount }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <strong>Status:</strong>
+                <span class="badge bg-success">{{ payment.status }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <strong>Paid On:</strong>
+                <span>{{ payment.paid_at|date:"F j, Y – g:i A" }}</span>
+              </li>
+            </ul>
+
+            <div class="mt-4 text-center">
+              <a href="{% url 'home' %}" class="btn btn-success px-4">🏠 Go to Dashboard</a>
+            </div>
+          {% else %}
+            <p class="text-danger fw-semibold text-center">
+              ⚠️ No successful payment found for this user.
+            </p>
+
+            <div class="text-center mt-3">
+              <a href="{% url 'razorpay-page' traveller.uuid %}" class="btn btn-outline-success">
+                🔄 Try Payment Again
+              </a>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="card-footer text-muted text-center">
+          Need help? <a href="#" class="text-decoration-none">Contact Support</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

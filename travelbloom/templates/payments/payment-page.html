@@ -1,0 +1,40 @@
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    var options = {
+        "key": "{{ client_id }}",
+        "amount": "{{ amount }}",
+        "currency": "INR",
+        "name": "LMS",
+        "description": "Course Enroll Payment",
+        "order_id": "{{ rzp_order_id }}",
+        "handler": function (response){
+            var form = document.createElement("form");
+            form.method = "POST";
+            form.action = "{% url 'verify-payment' %}"; //  callback url
+
+            var csrfToken = '{{ csrf_token }}';
+
+            // Add CSRF Token
+            var csrfInput = document.createElement("input");
+            csrfInput.type = "hidden";
+            csrfInput.name = "csrfmiddlewaretoken";
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+
+            // Add Razorpay response fields
+            ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature'].forEach(key => {
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = key;
+                input.value = response[key];
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+</script>

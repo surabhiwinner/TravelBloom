@@ -29,6 +29,7 @@ urlpatterns = [
     path('authentication/', include('authentication.urls')),
     path('chatbot/',include('chatbot.urls')),
     path('blogs/',include('blog.urls')),
+    path('payment/', include('payments.urls')),
 
 ]
 

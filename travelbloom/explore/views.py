@@ -73,16 +73,6 @@ def save_user_location(request):
         return JsonResponse({'status': 'error', 'message': f'An internal server error occurred: {str(e)}'}, status=500)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class UnlockAddonView(View):
-    def post(self, request, *args, **kwargs):
-        # dummy response — replace with your actual logic
-        return JsonResponse({"success": True})
-
-    def get(self, request, *args, **kwargs):
-        return JsonResponse({"error": "Invalid request"}, status=400)
-
-
 
 
 class PlannerView(View):

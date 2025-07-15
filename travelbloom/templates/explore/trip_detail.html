@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block section %}
-<div class="container py-5">
-  <h2 class="text-center mb-4 display-5 fw-bold text-primary">🗺️ Trip Route Overview</h2>
 
-  <!-- Trip Info -->
+<div class="container py-5">
+  <h2 class="text-center mb-5 display-5 fw-bold text-primary">🗺️ Trip Route Overview</h2>
+
+  <!-- Trip Info Card -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <h4 class="card-title text-success">{{ trip.name }}</h4>
-      <p class="mb-2">
+      <p>
         <strong>City:</strong> {{ trip.city }}<br>
         <strong>Total Stops:</strong> {{ trip.place_ids|length }}<br>
         <strong>Status:</strong> 
@@ -32,67 +33,64 @@
     </div>
   </div>
 
-  <!-- Premium Unlock Offer -->
-  {% if not traveller.has_premium_access %}
-    <div class="card shadow-sm mb-4 border border-success bg-light">
-      <div class="card-body text-center">
-        <h5 class="text-success fw-bold mb-2">🚀 Unlock All Premium Features</h5>
-        <ul class="list-unstyled small text-start d-inline-block">
-          <li>📄 Export Custom PDF Itinerary</li>
-          <li>📱 WhatsApp Travel Support</li>
-          <li>✍️ AI-Drafted Travel Blog Generator</li>
-        </ul>
-        <p class="mt-2 mb-3">One-time payment of <strong>₹99</strong></p>
-        <button class="btn btn-success" id="pay-button">Pay ₹99 & Unlock</button>
+  <!-- Premium Features Card -->
+  <div class="card shadow-sm mb-4 border border-success bg-light">
+    <div class="card-body text-center" id="premium-section">
+      <h5 class="text-success fw-bold mb-3">🚀 Unlock All Premium Features</h5>
+      <ul class="list-unstyled text-start d-inline-block mb-3 small">
+        <li>📄 Export Custom PDF Itinerary</li>
+        <li>📱 WhatsApp Travel Support</li>
+        <li>✍️ AI-Drafted Travel Blog Generator</li>
+      </ul>
+      <div id="premium-actions">
+        <p class="mb-3">One-time payment of <strong>₹99</strong></p>
+        <button class="btn btn-success" id="pay-button">💳 Pay ₹99 & Unlock Premium</button>
       </div>
     </div>
-  {% endif %}
+  </div>
 
-  <!-- Places in Order -->
+  <!-- Stops Card -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <h5 class="card-title text-primary">📍 Stops (in Order)</h5>
       <ul class="list-group list-group-flush">
         {% for place in places %}
-          <li class="list-group-item d-flex align-items-center justify-content-between">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
             <div>
               <span class="me-2">({{ forloop.counter }})</span>
               {% if place.is_hotel %}
                 🏨 <span class="text-success">{{ place.name }}</span>
                 <small class="ms-2 text-muted">(Hotel)</small>
               {% else %}
-                {% if place.all_visited %}
-                  ✅
-                {% elif place.is_visited %}
-                  ✔️
-                {% else %}
-                  📍
+                {% if place.all_visited %} ✅
+                {% elif place.is_visited %} ✔️
+                {% else %} 📍
                 {% endif %}
                 {{ place.name }}
               {% endif %}
             </div>
-            <div>
-              <small class="text-muted">[{{ place.lat }}, {{ place.lng }}]</small>
-            </div>
+            <small class="text-muted">[{{ place.lat }}, {{ place.lng }}]</small>
           </li>
+        {% empty %}
+          <li class="list-group-item text-center text-muted">No stops added yet.</li>
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <!-- Map -->
+  <!-- Google Map Card -->
   <div class="card shadow-sm">
     <div class="card-body">
       <h5 class="card-title text-primary">🗺️ Route Map</h5>
-      <div id="map" style="height: 500px;" class="rounded shadow-sm"></div>
+      <div id="map" class="rounded shadow-sm" style="height: 500px;"></div>
     </div>
   </div>
 </div>
 
-<!-- Google Maps Data -->
+<!-- Hidden JSON Data for Stops -->
 {{ places|json_script:"trip-stops-data" }}
 
-<!-- Google Maps Script -->
+<!-- Scripts -->
 <script>
   function initMap() {
     const stops = JSON.parse(document.getElementById('trip-stops-data').textContent);
@@ -100,11 +98,11 @@
 
     const map = new google.maps.Map(document.getElementById("map"), {
       zoom: 13,
-      center: { lat: stops[0].lat, lng: stops[0].lng },
+      center: { lat: stops[0].lat, lng: stops[0].lng }
     });
 
     const directionsService = new google.maps.DirectionsService();
-    const directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
+    const directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
     const waypoints = stops.slice(1, -1).map(p => ({
       location: { lat: p.lat, lng: p.lng },
@@ -120,7 +118,7 @@
       if (status === "OK") {
         directionsRenderer.setDirections(response);
       } else {
-        alert("Failed to load directions: " + status);
+        alert("⚠️ Failed to load directions: " + status);
       }
     });
   }
@@ -132,51 +130,86 @@
         "Content-Type": "application/json",
         "X-CSRFToken": '{{ csrf_token }}'
       },
-      body: JSON.stringify({ uuid: uuid })
+      body: JSON.stringify({ uuid })
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
       if (data.success) {
-        alert("Trip marked as completed!");
+        alert("✅ Trip marked as completed!");
         location.reload();
       } else {
-        alert("Failed to complete trip.");
+        alert("❌ Failed to complete trip.");
       }
     });
   }
-</script>
 
-<!-- Razorpay Payment Script -->
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script>
+  // Razorpay payment integration
   document.getElementById('pay-button')?.addEventListener('click', function (e) {
-    var options = {
-      "key": "{{ razorpay_key }}",
-      "amount": 9900,
-      "currency": "INR",
-      "name": "SmartVoyager",
-      "description": "Premium Add-ons Access",
-      "handler": function (response) {
+    e.preventDefault();
+    const options = {
+      key: "{{ razorpay_key }}",
+      amount: 9900,
+      currency: "INR",
+      name: "SmartVoyager",
+      description: "Premium Add-ons Access",
+      handler: function (response) {
         fetch("{% url 'unlock_addon' %}", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": "{{ csrf_token }}"
           },
-          body: JSON.stringify({
-            payment_id: response.razorpay_payment_id
-          })
-        }).then(res => location.reload());
+          body: JSON.stringify({ payment_id: response.razorpay_payment_id })
+        }).then(() => {
+          alert("✅ Premium unlocked!");
+          location.reload();
+        });
+      },
+      modal: {
+        ondismiss: function () {
+          const useMock = confirm("Payment cancelled. Simulate test unlock?");
+          if (useMock) mockUnlock();
+        }
       }
     };
-    var rzp = new Razorpay(options);
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (response) {
+      alert("❌ Payment failed: " + response.error.description);
+    });
     rzp.open();
-    e.preventDefault();
+  });
+
+  function mockUnlock() {
+    fetch("{% url 'unlock_addon' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}"
+      },
+      body: JSON.stringify({ payment_id: "MOCK12345" })
+    }).then(() => {
+      alert("✅ Mock unlock completed!");
+      location.reload();
+    });
+  }
+
+  // Check if premium is already unlocked
+  document.addEventListener('DOMContentLoaded', function () {
+    fetch(`/payment/confirm/{{ traveller.uuid }}/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById('premium-actions').innerHTML = `
+            <span class="badge bg-success">✅ Premium Active</span>
+            <p class="text-muted mt-2">Thank you for unlocking premium access.</p>
+          `;
+        }
+      });
   });
 </script>
 
-<!-- Load Google Maps -->
-<script async
-  src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap">
-</script>
+<!-- External APIs -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script async src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap"></script>
+
 {% endblock %}
