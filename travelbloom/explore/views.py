@@ -8,6 +8,8 @@ from django.views.decorators.http import require_POST
 
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
+from django.http import JsonResponse
+
 import json
 # Create your views here.
 from django.views import View
@@ -24,6 +26,10 @@ from django.views.decorators.http import require_POST
 
 import math 
 import pytz
+
+from authentication.models import Traveller
+
+from .models import Trip
 
 from django.utils.timezone import now,localtime
 
@@ -66,7 +72,17 @@ def save_user_location(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An internal server error occurred: {str(e)}'}, status=500)
 
-  
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UnlockAddonView(View):
+    def post(self, request, *args, **kwargs):
+        # dummy response — replace with your actual logic
+        return JsonResponse({"success": True})
+
+    def get(self, request, *args, **kwargs):
+        return JsonResponse({"error": "Invalid request"}, status=400)
+
+
 
 
 class PlannerView(View):
@@ -486,7 +502,7 @@ class TripDetailView(View):
                         "fields": "name,geometry",
                         "key": settings.GOOGLE_MAPS_API_KEY,
                     },
-                    timeout=5  # prevent hanging indefinitely
+                    timeout=5
                 )
                 data = response.json()
                 if data.get("status") == "OK":
@@ -504,15 +520,19 @@ class TripDetailView(View):
                     print(f"Google API error: {data.get('status')} for place_id {pid}")
             except RequestException as e:
                 print(f"Failed to fetch details for {pid}: {e}")
-                continue  # skip and proceed with others
+                continue
+
+        # 🔐 Get the current traveller
+        traveller = Traveller.objects.get(profile=request.user)
 
         context = {
             "trip": trip,
             "places": ordered_place_details,
-            "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY
+            "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
+            "traveller": traveller,
+            "razorpay_key": settings.RAZORPAY_PUBLIC_KEY,  # Or hardcode for now
         }
         return render(request, "explore/trip_detail.html", context)
-
 
 # New logic to mark visited places (based on proximity)
 @csrf_exempt

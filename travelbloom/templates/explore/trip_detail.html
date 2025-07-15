@@ -32,6 +32,22 @@
     </div>
   </div>
 
+  <!-- Premium Unlock Offer -->
+  {% if not traveller.has_premium_access %}
+    <div class="card shadow-sm mb-4 border border-success bg-light">
+      <div class="card-body text-center">
+        <h5 class="text-success fw-bold mb-2">🚀 Unlock All Premium Features</h5>
+        <ul class="list-unstyled small text-start d-inline-block">
+          <li>📄 Export Custom PDF Itinerary</li>
+          <li>📱 WhatsApp Travel Support</li>
+          <li>✍️ AI-Drafted Travel Blog Generator</li>
+        </ul>
+        <p class="mt-2 mb-3">One-time payment of <strong>₹99</strong></p>
+        <button class="btn btn-success" id="pay-button">Pay ₹99 & Unlock</button>
+      </div>
+    </div>
+  {% endif %}
+
   <!-- Places in Order -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
@@ -128,6 +144,35 @@
       }
     });
   }
+</script>
+
+<!-- Razorpay Payment Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  document.getElementById('pay-button')?.addEventListener('click', function (e) {
+    var options = {
+      "key": "{{ razorpay_key }}",
+      "amount": 9900,
+      "currency": "INR",
+      "name": "SmartVoyager",
+      "description": "Premium Add-ons Access",
+      "handler": function (response) {
+        fetch("{% url 'unlock_addon' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+          },
+          body: JSON.stringify({
+            payment_id: response.razorpay_payment_id
+          })
+        }).then(res => location.reload());
+      }
+    };
+    var rzp = new Razorpay(options);
+    rzp.open();
+    e.preventDefault();
+  });
 </script>
 
 <!-- Load Google Maps -->

@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from explore.views import UnlockAddonView
 
 from .views import save_trip, save_user_location
 urlpatterns = [
@@ -36,7 +37,7 @@ urlpatterns = [
 
     # path('trip/edit/<slug:uuid>/', views.TripEditFormView.as_view(), name='edit-trip-page'),
 
-
+    path('unlock-addon/', UnlockAddonView.as_view(), name='unlock_addon'),
 
 
 ]
