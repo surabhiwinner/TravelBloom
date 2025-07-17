@@ -13,7 +13,6 @@
 		color: white;
 		text-align: center;
 	}
-
 	.hero-content h1 {
 		font-size: 4rem;
 		font-weight: 700;
@@ -29,7 +28,6 @@
 		font-size: 1.1rem;
 		border-radius: 30px;
 	}
-
 	@keyframes fadeInDown {
 		from { transform: translateY(-30px); opacity: 0; }
 		to { transform: translateY(0); opacity: 1; }
@@ -82,7 +80,8 @@
 	/* Stats Section */
 	.stats-section {
 		padding: 60px 0;
-		background-color: #ffffff;
+		background-color: #f2f2f2 !important;
+		color: #222 !important;
 		text-align: center;
 	}
 	.stat-item {
@@ -114,38 +113,8 @@
 	.stat-item:hover::before {
 		opacity: 1;
 	}
-	.stat-item h2 {
-		font-size: 2.5rem;
-		margin: 0;
-	}
-	.stat-item p {
-		margin: 0;
-		font-size: 1rem;
-		color: #666;
-	}
-	.stat-item .circle-icon {
-		width: 70px;
-		height: 70px;
-		border-radius: 50%;
-		background-color: #f0f0f0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin: 0 auto 20px auto;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-		transition: all 0.4s ease;
-	}
-	.stat-item:hover .circle-icon {
-		transform: scale(1.1) rotate(5deg);
-		background-color: #e6e6ff;
-	}
-	.stat-item:hover i {
-		animation: bounceIcon 0.6s ease;
-	}
-	@keyframes bounceIcon {
-		0%   { transform: scale(1); }
-		50%  { transform: scale(1.3); }
-		100% { transform: scale(1); }
+	.stat-item h2, .stat-item p {
+		color: #222 !important;
 	}
 
 	/* CTA Section */
@@ -166,18 +135,9 @@
 		opacity: 1;
 		transform: translateY(0);
 	}
-
-	.stats-section {
-  padding: 60px 0;
-  background-color: #f2f2f2 !important;  /* light gray to test */
-  color: #222 !important;
-}
-.stat-item p, .stat-item h2 {
-  color: #222 !important;
-}
 </style>
 
-<!-- Hero Section -->
+<!-- ===== Hero Section ===== -->
 <div class="hero-section">
 	<div class="hero-content">
 		<h1>Discover. Document. Relive.</h1>
@@ -190,7 +150,7 @@
 	</div>
 </div>
 
-<!-- Features Section -->
+<!-- ===== Features Section ===== -->
 <section class="features-section">
 	<div class="container">
 		<div class="row mb-5">
@@ -202,44 +162,42 @@
 		<div class="row g-4">
 			<div class="col-md-4">
 				<div class="feature-box">
-					{% if request.user.is_authenticated %}
-					<a href="{% url 'diary-list' %}"><div class="circle-icon">
-						<i class="fas fa-pen-nib fa-2x text-primary"></i>
-					</div></a>
-					{% else %}
-					<a href="{% url 'login' %}"><div class="circle-icon">
-						<i class="fas fa-pen-nib fa-2x text-primary"></i>
-					</div></a>
-					{% endif %}
-
-
-					<h4>Write Daily Journals</h4>
-					<p>Pen your thoughts, plans, and reflections on every journey you take.</p>
+					<a href="{% url request.user.is_authenticated|yesno:'diary-list,login' %}">
+						<div class="circle-icon">
+							<i class="fas fa-pen-nib fa-2x text-primary"></i>
+						</div>
+						<h4>Write Daily Journals</h4>
+						<p>Pen your thoughts, plans, and reflections on every journey you take.</p>
+					</a>
 				</div>
 			</div>
 			<div class="col-md-4">
 				<div class="feature-box">
-					<div class="circle-icon">
-						<a href="{% url 'gallery' %}"><i class="fas fa-camera-retro fa-2x text-success"></i></a>
-					</div>
-					<h4>Add Media Memories</h4>
-					<p>Attach photos, videos & voice notes that bring your experiences to life.</p>
+					<a href="{% url 'gallery' %}">
+						<div class="circle-icon">
+							<i class="fas fa-camera-retro fa-2x text-success"></i>
+						</div>
+						<h4>Add Media Memories</h4>
+						<p>Attach photos, videos & voice notes that bring your experiences to life.</p>
+					</a>
 				</div>
 			</div>
 			<div class="col-md-4">
 				<div class="feature-box">
-					<a href="{% url 'map' %}"><div class="circle-icon">
-						<i class="fas fa-map-marker-alt fa-2x text-danger"></i>
-					</div></a>
-					<h4>Map Your Locations</h4>
-					<p>Drop pins to remember where each entry was made — beautifully visualized.</p>
+					<a href="{% url 'map' %}">
+						<div class="circle-icon">
+							<i class="fas fa-map-marker-alt fa-2x text-danger"></i>
+						</div>
+						<h4>Map Your Locations</h4>
+						<p>Drop pins to remember where each entry was made — beautifully visualized.</p>
+					</a>
 				</div>
 			</div>
 		</div>
 	</div>
 </section>
 
-<!-- Stats Section -->
+<!-- ===== Stats Section ===== -->
 <section class="stats-section">
 	<div class="container">
 		<div class="row text-center justify-content-center">
@@ -268,8 +226,7 @@
 	</div>
 </section>
 
-
-<!-- CTA Section -->
+<!-- ===== CTA Section ===== -->
 <div class="cta-section">
 	<div class="container">
 		<h2>Turn Your Travel Into Timeless Stories</h2>
@@ -278,25 +235,23 @@
 	</div>
 </div>
 
-<!-- CountUp JS -->
+<!-- ===== Scripts ===== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.min.js"></script>
+
 <script>
-	document.addEventListener('DOMContentLoaded', function () {
-		new CountUp('user-count', 5623).start();
-		new CountUp('download-count', 12489).start();
-		new CountUp('rating-count', 4.8, { decimalPlaces: 1 }).start();
+document.addEventListener("DOMContentLoaded", function () {
+	const animatedItems = document.querySelectorAll('.animate-up');
+	const observer = new IntersectionObserver(entries => {
+		entries.forEach(entry => {
+			if (entry.isIntersecting) {
+				entry.target.classList.add('visible');
+				observer.unobserve(entry.target);
+			}
+		});
+	}, { threshold: 0.1 });
 
-		const animatedItems = document.querySelectorAll('.animate-up');
-		const observer = new IntersectionObserver(entries => {
-			entries.forEach(entry => {
-				if (entry.isIntersecting) {
-					entry.target.classList.add('visible');
-					observer.unobserve(entry.target);
-				}
-			});
-		}, { threshold: 0.1 });
-
-		animatedItems.forEach(item => observer.observe(item));
-	});
+	animatedItems.forEach(item => observer.observe(item));
+});
 </script>
 {% endblock %}

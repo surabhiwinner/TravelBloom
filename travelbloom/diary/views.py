@@ -20,6 +20,36 @@ from blog.models import BlogPost
 
 # Create your views here.
 
+from authentication.models import Traveller
+
+from authentication.models import Traveller
+
+class HomeView(View):
+    def get(self, request, *args, **kwargs):
+        context = {
+            'page': 'home-page',
+        }
+
+        if request.user.is_authenticated:
+            try:
+                traveller = Traveller.objects.get(profile=request.user)
+                context['traveller'] = traveller
+
+                print(traveller.uuid,'exist')
+            except Traveller.DoesNotExist:
+                context['traveller'] = None
+
+                print(traveller.uuid,'not')
+        else:
+            context['traveller'] = None
+
+            print(traveller.uuid,'none')
+
+
+        
+
+        return render(request, 'diary/home.html', context)
+
 
 class DiaryEntryWriteView(View):
 
@@ -114,16 +144,16 @@ class DiaryEntryDetailView(View):
         }
         return render(request, "diary/entry_details.html", context)
 
-class HomeView(View):
+# class HomeView(View):
 
 
-    def get(self, request, *args, **kwargs):
+#     def get(self, request, *args, **kwargs):
 
-        data = {
-            'page' : 'home-page'
-        }
+#         data = {
+#             'page' : 'home-page'
+#         }
 
-        return render(request,'diary/home.html',context=data)
+#         return render(request,'diary/home.html',context=data)
 
 
 class DiaryentryDeleteView(View):

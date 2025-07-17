@@ -88,8 +88,9 @@ UNWANTED_KEYWORDS = ["gym", "fitness", "lab","stop", "hospital", "clinic", "phar
 WANTED_TYPES = {
     "bus_station": ["bus_station"],
     "train_station": ["train_station"],
-    "airport": [" international airport"],
+    "airport": ["international_airport", "airport"],
     "metro_station": ["subway_station"],
+    "attraction": ["tourist_attraction", "point_of_interest", "museum","sea","beach","lake", "zoo", "park", "amusement_park"]
 }
 
 def is_relevant_place(place, kind):
@@ -101,21 +102,29 @@ def is_relevant_place(place, kind):
         return any(t in types for t in WANTED_TYPES[kind])
     return True
 
+
 @require_POST
 @csrf_exempt
 def fetch_places(request):
-    data = json.loads(request.body)
-    city = data.get("city")
-    kind = data.get("kind")
-    lat = data.get("lat")
-    lng = data.get("lng")
-
-    api_key = settings.GOOGLE_MAPS_API_KEY
-
     try:
-        if lat and lng:
-            # Use Nearby Search for transport points
-            url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        data = json.loads(request.body)
+        city = data.get("city")
+        kind = data.get("kind")
+        lat = data.get("lat")
+        lng = data.get("lng")
+
+        api_key = settings.GOOGLE_MAPS_API_KEY
+
+        # Use Text Search for attractions regardless of lat/lng
+        if kind == "attraction":
+            query = f"{kind} in {city}"
+            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+            params = {
+                "query": query,
+                "key": api_key,
+            }
+        elif lat and lng:
+            url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
             params = {
                 "location": f"{lat},{lng}",
                 "radius": 8000,
@@ -123,9 +132,8 @@ def fetch_places(request):
                 "key": api_key,
             }
         else:
-            # Use Text Search for other types
-            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json"
             query = f"{kind} in {city}"
+            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
             params = {
                 "query": query,
                 "key": api_key,
@@ -134,14 +142,12 @@ def fetch_places(request):
         response = requests.get(url, params=params)
         results = response.json().get("results", [])
 
-        # 🧹 Filter results using helper
         filtered_results = [p for p in results if is_relevant_place(p, kind)]
 
         return JsonResponse({"results": filtered_results})
-    
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-            
 
 def haversine(lat1, lon1, lat2, lon2):
     if None in (lat1, lon1, lat2, lon2):
@@ -671,6 +677,3 @@ def check_trip_progress(request):
 #             "name": trip.name,
 #         }
 #         return render(request, "explore/planner_edit.html", context)
-
-
-
