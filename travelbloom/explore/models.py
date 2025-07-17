@@ -44,6 +44,14 @@ class Trip(BaseClass):
     distance = models.FloatField()
     city = models.CharField(max_length=100)
     status = models.CharField(max_length=10,choices=TripStatusChoices.choices,default=TripStatusChoices.PLANNING)
+    
+     # ✅ Add these fields
+    hotel_id = models.CharField(max_length=255, blank=True, null=True)
+    hotel_lat = models.FloatField(blank=True, null=True)
+    hotel_lng = models.FloatField(blank=True, null=True)
+    places = models.JSONField(default=list, blank=True)
+
+    
     place_ids = models.JSONField(help_text="List of Google Place IDs in selected order")
     final_place_lat = models.FloatField(null=True, blank=True)
     final_place_lng = models.FloatField(null=True, blank=True)

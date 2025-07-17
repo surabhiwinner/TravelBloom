@@ -4,14 +4,15 @@
 <div class="container py-5">
   <h2 class="text-center mb-5 display-5 fw-bold text-primary">🗺️ Trip Route Overview</h2>
 
-  <!-- Trip Info Card -->
-  <div class="card shadow-sm mb-4">
+  <!-- Trip Summary -->
+  <div class="card shadow mb-4">
     <div class="card-body">
-      <h4 class="card-title text-success">{{ trip.name }}</h4>
+      <h4 class="text-success">{{ trip.name }}</h4>
+      <p class="mb-1"><strong>📍 City:</strong> {{ trip.city }}</p>
+      <p class="mb-1"><strong>🛑 Total Stops:</strong> {{ trip.place_ids|length }}</p>
+      <p class="mb-1"><strong>📏 Total Distance:</strong> <span id="total-distance" class="text-primary">Calculating...</span></p>
       <p>
-        <strong>City:</strong> {{ trip.city }}<br>
-        <strong>Total Stops:</strong> {{ trip.place_ids|length }}<br>
-        <strong>Status:</strong> 
+        <strong>🚦 Status:</strong>
         <span class="badge 
           {% if trip.status == 'Planning' %} bg-info
           {% elif trip.status == 'Ongoing' %} bg-warning
@@ -20,40 +21,40 @@
           {{ trip.status }}
         </span>
       </p>
-
-      <!-- Trip Actions -->
       {% if trip.status == 'Planning' %}
         <form method="post" action="{% url 'start-trip' trip.uuid %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-warning">🚀 Start Trip</button>
+          <button type="submit" class="btn btn-warning mt-2">🚀 Start Trip</button>
         </form>
       {% elif trip.status == 'Ongoing' %}
-        <button class="btn btn-success" onclick="completeTrip('{{ trip.uuid }}')">✅ Complete Trip</button>
+        <button class="btn btn-success mt-2" onclick="completeTrip('{{ trip.uuid }}')">✅ Complete Trip</button>
       {% endif %}
     </div>
   </div>
 
-  <!-- Stops Card -->
-  <div class="card shadow-sm mb-4">
+  <!-- Trip Stops -->
+  <div class="card shadow mb-4">
     <div class="card-body">
-      <h5 class="card-title text-primary">📍 Stops (in Order)</h5>
+      <h5 class="card-title text-primary">📌 Trip Stops</h5>
       <ul class="list-group list-group-flush">
         {% for place in places %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-              <span class="me-2">({{ forloop.counter }})</span>
-              {% if place.is_hotel %}
-                🏨 <span class="text-success">{{ place.name }}</span>
-                <small class="ms-2 text-muted">(Hotel)</small>
-              {% else %}
-                {% if place.all_visited %} ✅
-                {% elif place.is_visited %} ✔️
-                {% else %} 📍
+          <li id="stop-{{ forloop.counter0 }}" class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ forloop.counter }}.</strong>
+                {% if place.is_hotel %}
+                  🏨 <span class="text-success fw-bold">{{ place.name }}</span>
+                  <span class="badge bg-secondary ms-2">Hotel</span>
+                {% else %}
+                  {% if place.all_visited %} ✅
+                  {% elif place.is_visited %} ✔️
+                  {% else %} 📍
+                  {% endif %}
+                  <span class="fw-semibold">{{ place.name }}</span>
                 {% endif %}
-                {{ place.name }}
-              {% endif %}
+              </div>
+              <div class="stop-distance text-muted small"></div>
             </div>
-            <small class="text-muted">[{{ place.lat }}, {{ place.lng }}]</small>
           </li>
         {% empty %}
           <li class="list-group-item text-center text-muted">No stops added yet.</li>
@@ -62,19 +63,25 @@
     </div>
   </div>
 
-  <!-- Google Map Card -->
-  <div class="card shadow-sm">
+  <!-- Map Section -->
+  <div class="card shadow">
     <div class="card-body">
       <h5 class="card-title text-primary">🗺️ Route Map</h5>
       <div id="map" class="rounded shadow-sm" style="height: 500px;"></div>
+      <a id="start-direction-btn"
+         href="#"
+         target="_blank"
+         class="btn btn-outline-primary mt-4">
+         ▶️ Start Directions in Google Maps
+      </a>
     </div>
   </div>
 </div>
 
-<!-- Hidden JSON Data for Stops -->
+<!-- JSON Data -->
 {{ places|json_script:"trip-stops-data" }}
 
-<!-- JavaScript -->
+<!-- JS Section -->
 <script>
   function initMap() {
     const stops = JSON.parse(document.getElementById('trip-stops-data').textContent);
@@ -84,6 +91,15 @@
       zoom: 13,
       center: { lat: stops[0].lat, lng: stops[0].lng }
     });
+
+    if (stops.length === 1) {
+      new google.maps.Marker({
+        position: { lat: stops[0].lat, lng: stops[0].lng },
+        map: map,
+        title: stops[0].name
+      });
+      return;
+    }
 
     const directionsService = new google.maps.DirectionsService();
     const directionsRenderer = new google.maps.DirectionsRenderer({ map });
@@ -101,10 +117,41 @@
     }, (response, status) => {
       if (status === "OK") {
         directionsRenderer.setDirections(response);
+
+        const route = response.routes[0];
+        let totalDistance = 0;
+
+        route.legs.forEach((leg, i) => {
+          totalDistance += leg.distance.value;
+
+          const distanceEl = document.querySelector(`#stop-${i + 1} .stop-distance`);
+          if (distanceEl) {
+            distanceEl.innerHTML = `🚗 <strong>${leg.distance.text}</strong> from previous stop`;
+          }
+        });
+
+        document.getElementById("total-distance").innerText = `${(totalDistance / 1000).toFixed(1)} km`;
+
+        // Set Google Maps Directions URL
+        setDirectionLink(stops);
       } else {
         alert("⚠️ Failed to load directions: " + status);
       }
     });
+  }
+
+  function setDirectionLink(stops) {
+    if (stops.length < 2) return;
+
+    const origin = `${stops[0].lat},${stops[0].lng}`;
+    const destination = `${stops[stops.length - 1].lat},${stops[stops.length - 1].lng}`;
+    const waypoints = stops.slice(1, -1).map(p => `${p.lat},${p.lng}`).join('|');
+
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving${
+      waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ''
+    }`;
+
+    document.getElementById('start-direction-btn').href = url;
   }
 
   function completeTrip(uuid) {

@@ -4,7 +4,7 @@ from . import views
 
 from .views import save_trip, save_user_location
 urlpatterns = [
-    path('map/', views.map_view, name='map'),
+        path('map/', views.map_view, name='map'),
 
     # Save user location (POST from JS)
     path('save-user-location/', views.save_user_location, name='save_user_location'),
@@ -37,7 +37,8 @@ urlpatterns = [
 
     # path('trip/edit/<slug:uuid>/', views.TripEditFormView.as_view(), name='edit-trip-page'),
 
-   
+    # path('api/hotel-offers/', views.HotelOffersView.as_view(), name='hotel_offers'),
+
 
 
 ]

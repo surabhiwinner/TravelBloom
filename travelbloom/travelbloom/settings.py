@@ -194,3 +194,10 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # Razorpay Keys (used for premium feature payments)
 RAZORPAY_PUBLIC_KEY = config('RAZORPAY_PUBLIC_KEY')
 RAZORPAY_SECRET_KEY = config('RAZORPAY_SECRET_KEY')
+
+
+
+#amadeus_apis(to get hotel details)
+
+AMADEUS_API_KEY = config('AMADEUS_KEY')
+AMADEUS_API_SECRET = config('AMADEUS__SECRET')

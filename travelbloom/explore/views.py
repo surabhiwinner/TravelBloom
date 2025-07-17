@@ -23,19 +23,25 @@ from google import generativeai as genai  # new client class
 import requests
 
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 import math 
 import pytz
-
+from requests.exceptions import RequestException
 from authentication.models import Traveller
 
 from .models import Trip
+from datetime import datetime, timedelta
 
 from django.utils.timezone import now,localtime
 
 GOOGLE = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
 GOOGLE_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+AMADEUS_API_KEY = settings.AMADEUS_API_KEY
+AMADEUS_API_SECRET = settings.AMADEUS_API_SECRET
+
 
 def map_view(request):
 
@@ -72,24 +78,12 @@ def save_user_location(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An internal server error occurred: {str(e)}'}, status=500)
 
-
-
-
-class PlannerView(View):
-    
-    def get(self, request, *args, **kwargs):
-        data = {
-            'page': 'planner-page',
-            'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
-        }
-        return render(request, 'explore/planner.html', context=data)
-
-UNWANTED_KEYWORDS = ["gym", "fitness", "lab","stop", "hospital", "clinic", "pharmacy"]
+UNWANTED_KEYWORDS = ["gym","bank", "fitness", "lab","stop", "hospital", "clinic", "pharmacy"]
 WANTED_TYPES = {
-    "bus_station": ["bus_station"],
-    "train_station": ["train_station"],
-    "airport": ["international_airport", "airport"],
-    "metro_station": ["subway_station"],
+    # "bus_station": ["bus_station"],
+    # "train_station": ["train_station"],
+    # "airport": ["international_airport", "airport"],
+    # "metro_station": ["subway_station"],
     "attraction": ["tourist_attraction", "point_of_interest", "museum","sea","beach","lake", "zoo", "park", "amusement_park"]
 }
 
@@ -103,124 +97,34 @@ def is_relevant_place(place, kind):
     return True
 
 
-@require_POST
-@csrf_exempt
-def fetch_places(request):
-    try:
-        data = json.loads(request.body)
-        city = data.get("city")
-        kind = data.get("kind")
-        lat = data.get("lat")
-        lng = data.get("lng")
-
-        api_key = settings.GOOGLE_MAPS_API_KEY
-
-        # Use Text Search for attractions regardless of lat/lng
-        if kind == "attraction":
-            query = f"{kind} in {city}"
-            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-            params = {
-                "query": query,
-                "key": api_key,
-            }
-        elif lat and lng:
-            url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-            params = {
-                "location": f"{lat},{lng}",
-                "radius": 8000,
-                "type": kind,
-                "key": api_key,
-            }
-        else:
-            query = f"{kind} in {city}"
-            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-            params = {
-                "query": query,
-                "key": api_key,
-            }
-
-        response = requests.get(url, params=params)
-        results = response.json().get("results", [])
-
-        filtered_results = [p for p in results if is_relevant_place(p, kind)]
-
-        return JsonResponse({"results": filtered_results})
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
-def haversine(lat1, lon1, lat2, lon2):
-    if None in (lat1, lon1, lat2, lon2):
-        return None  # Return None instead of crashing
-
-    R = 6371  # Earth radius in kilometers
-    dLat = math.radians(lat2 - lat1)
-    dLon = math.radians(lon2 - lon1)
-    a = math.sin(dLat / 2) ** 2 + math.cos(math.radians(lat1)) \
-        * math.cos(math.radians(lat2)) * math.sin(dLon / 2) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
-
 def get_place_detail(place_id):
-    response = requests.get(
-        "https://maps.googleapis.com/maps/api/place/details/json",
-        params={
-            "place_id": place_id,
-            "fields": "name,geometry",
-            "key": settings.GOOGLE_MAPS_API_KEY
-        }
-    )
-    return response.json().get("result")
+    url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&key={settings.GOOGLE_MAPS_API_KEY}"
+    response = requests.get(url)
+    return response.json().get("result", {})
 
-
-
-@require_POST
 @csrf_exempt
-def build_route(request):
-    try:
-        body = json.loads(request.body)
-        place_ids = body.get("place_ids", [])
+@login_required
+def save_trip(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
 
-        if len(place_ids) < 2:
-            return JsonResponse({"error": "Select at least two places."}, status=400)
+            trip = Trip.objects.create(
+                user=request.user,
+                name=data.get("name"),
+                city=data.get("city"),
+                place_ids=data.get("place_ids"),
+                hotel_id=data.get("hotel_id"),
+                hotel_lat=data.get("hotel_lat"),
+                hotel_lng=data.get("hotel_lng"),
+                distance=data.get("distance")
+            )
 
-        details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+            return JsonResponse({"message": "Trip saved successfully!"})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
-        # Fetch lat/lng of all places
-        places = []
-        for pid in place_ids:
-            res = requests.get(details_url, params={
-                "place_id": pid,
-                "key": settings.GOOGLE_MAPS_API_KEY,
-                "fields": "geometry/location"
-            }).json()
-
-            loc = res.get("result", {}).get("geometry", {}).get("location")
-            if loc:
-                places.append({
-                    "place_id": pid,
-                    "lat": loc["lat"],
-                    "lng": loc["lng"]
-                })
-
-        # Sort by distance from the first location (greedy sort)
-        start = places[0]
-        ordered = [start]
-        places_left = places[1:]
-
-        while places_left:
-            last = ordered[-1]
-            nearest = min(places_left, key=lambda p: haversine(last["lat"], last["lng"], p["lat"], p["lng"]))
-            ordered.append(nearest)
-            places_left.remove(nearest)
-
-        ordered_ids = [p["place_id"] for p in ordered]
-
-        return JsonResponse({"waypoints": ordered_ids})
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 @require_POST
 @csrf_exempt
@@ -294,6 +198,125 @@ def render_selected_list(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+
+class PlannerView(View):
+    
+    def get(self, request, *args, **kwargs):
+        data = {
+            'page': 'planner-page',
+            'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
+        }
+        return render(request, 'explore/planner.html', context=data)
+
+
+@require_POST
+@csrf_exempt
+def fetch_places(request):
+    try:
+        data = json.loads(request.body)
+        city = data.get("city")
+        kind = data.get("kind")
+        lat = data.get("lat")
+        lng = data.get("lng")
+
+        api_key = settings.GOOGLE_MAPS_API_KEY
+
+        # Use Text Search for attractions regardless of lat/lng
+        if kind == "attraction":
+            query = f"{kind} in {city}"
+            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+            params = {
+                "query": query,
+                "key": api_key,
+            }
+        elif lat and lng:
+            url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+            params = {
+                "location": f"{lat},{lng}",
+                "radius": 8000,
+                "type": kind,
+                "key": api_key,
+            }
+        else:
+            query = f"{kind} in {city}"
+            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+            params = {
+                "query": query,
+                "key": api_key,
+            }
+
+        response = requests.get(url, params=params)
+        results = response.json().get("results", [])
+
+        filtered_results = [p for p in results if is_relevant_place(p, kind)]
+
+        return JsonResponse({"results": filtered_results})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+def haversine(lat1, lon1, lat2, lon2):
+    if None in (lat1, lon1, lat2, lon2):
+        return None  # Prevents crash if any value is missing
+
+    R = 6371  # Earth radius in kilometers
+    dLat = math.radians(lat2 - lat1)
+    dLon = math.radians(lon2 - lon1)
+    a = math.sin(dLat / 2) ** 2 + math.cos(math.radians(lat1)) \
+        * math.cos(math.radians(lat2)) * math.sin(dLon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+
+@require_POST
+@csrf_exempt
+def build_route(request):
+    try:
+        body = json.loads(request.body)
+        place_ids = body.get("place_ids", [])
+
+        if len(place_ids) < 2:
+            return JsonResponse({"error": "Select at least two places."}, status=400)
+
+        details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+
+        # Fetch lat/lng of all places
+        places = []
+        for pid in place_ids:
+            res = requests.get(details_url, params={
+                "place_id": pid,
+                "key": settings.GOOGLE_MAPS_API_KEY,
+                "fields": "geometry/location"
+            }).json()
+
+            loc = res.get("result", {}).get("geometry", {}).get("location")
+            if loc:
+                places.append({
+                    "place_id": pid,
+                    "lat": loc["lat"],
+                    "lng": loc["lng"]
+                })
+
+        # Sort by distance from the first location (greedy sort)
+        start = places[0]
+        ordered = [start]
+        places_left = places[1:]
+
+        while places_left:
+            last = ordered[-1]
+            nearest = min(places_left, key=lambda p: haversine(last["lat"], last["lng"], p["lat"], p["lng"]))
+            ordered.append(nearest)
+            places_left.remove(nearest)
+
+        ordered_ids = [p["place_id"] for p in ordered]
+
+        return JsonResponse({"waypoints": ordered_ids})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
 def calculate_total_distance(place_coords):
     total = 0.0
     for i in range(1, len(place_coords)):
@@ -306,84 +329,6 @@ def calculate_total_distance(place_coords):
 
 
 
-@csrf_exempt
-@require_POST
-def save_trip(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Login required."}, status=401)
-
-    try:
-        data = json.loads(request.body)
-        name = data.get("name", "My Trip")
-        city = data.get("city")
-        place_ids = data.get("place_ids", [])
-
-        if not city or not place_ids:
-            return JsonResponse({"error": "City and places required."}, status=400)
-
-        hotel_id = None
-        hotel_lat = hotel_lng = None
-        attraction_data = []
-
-        for pid in place_ids:
-            result = get_place_detail(pid)
-            if not result:
-                continue
-            lat = result["geometry"]["location"]["lat"]
-            lng = result["geometry"]["location"]["lng"]
-            types = result.get("types", [])
-
-            # DEBUG log
-            print(f"[DEBUG] Place ID: {pid}, Name: {result.get('name')}, Types: {types}")
-
-            is_lodging = "lodging" in types
-            is_hotel_keyword = any(word in result.get("name", "").lower() for word in ["hotel", "inn", "resort", "hostel", "homestay"])
-
-            if (is_lodging or is_hotel_keyword) and not hotel_id:
-                hotel_id = pid
-                hotel_lat = lat
-                hotel_lng = lng
-            else:
-                attraction_data.append({
-                    'place_id': pid,
-                    'lat': lat,
-                    'lng': lng
-                })
-
-        if not hotel_id:
-            return JsonResponse({"error": "At least one hotel (lodging) must be selected."}, status=400)
-
-        # Sort attractions by distance from hotel
-        for place in attraction_data:
-            place['distance'] = haversine(hotel_lat, hotel_lng, place['lat'], place['lng'])
-
-        attraction_data.sort(key=lambda x: x['distance'])
-
-        ordered_place_ids = [hotel_id] + [a['place_id'] for a in attraction_data]
-
-        # Calculate total distance
-        coords = [(hotel_lat, hotel_lng)] + [(a['lat'], a['lng']) for a in attraction_data]
-        total_distance = 0.0
-        for i in range(1, len(coords)):
-            total_distance += haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1])
-
-        final_lat = coords[-1][0]
-        final_lng = coords[-1][1]
-
-        trip = Trip.objects.create(
-            user=request.user,
-            name=name,
-            city=city,
-            place_ids=ordered_place_ids,
-            distance=round(total_distance, 2),
-            final_place_lat=final_lat,
-            final_place_lng=final_lng
-        )
-
-        return JsonResponse({"success": True, "trip_id": str(trip.uuid), "distance": round(total_distance, 2)})
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
 class TripListView(View):
     def get(self, request, *args, **kwargs):
@@ -487,11 +432,9 @@ class TripDetailView(View):
         visited = trip.visited_places or []
         all_visited = set(visited) == set(trip.place_ids)
 
-        ordered_place_details = []
-
-        for i, pid in enumerate(trip.place_ids):
+        def fetch_place(pid):
             try:
-                response = requests.get(
+                res = requests.get(
                     "https://maps.googleapis.com/maps/api/place/details/json",
                     params={
                         "place_id": pid,
@@ -499,26 +442,43 @@ class TripDetailView(View):
                         "key": settings.GOOGLE_MAPS_API_KEY,
                     },
                     timeout=5
-                )
-                data = response.json()
-                if data.get("status") == "OK":
-                    result = data["result"]
-                    ordered_place_details.append({
-                        "place_id": pid,
-                        "name": result["name"],
-                        "lat": result["geometry"]["location"]["lat"],
-                        "lng": result["geometry"]["location"]["lng"],
-                        "is_hotel": (i == 0),
-                        "is_visited": pid in visited,
-                        "all_visited": all_visited,
-                    })
-                else:
-                    print(f"Google API error: {data.get('status')} for place_id {pid}")
-            except RequestException as e:
-                print(f"Failed to fetch details for {pid}: {e}")
-                continue
+                ).json()
+                result = res.get("result", {})
+                return {
+                    "place_id": pid,
+                    "name": result.get("name", "Unknown"),
+                    "lat": result.get("geometry", {}).get("location", {}).get("lat"),
+                    "lng": result.get("geometry", {}).get("location", {}).get("lng"),
+                    "is_visited": pid in visited,
+                }
+            except Exception as e:
+                print(f"Error fetching place {pid}: {e}")
+                return None
 
-        # 🔐 Get the current traveller
+        all_places = [fetch_place(pid) for pid in trip.place_ids]
+        all_places = [p for p in all_places if p and p["lat"] and p["lng"]]
+
+        if not all_places:
+            ordered_place_details = []
+        else:
+            # Identify the hotel (either by name or your own logic)
+            hotel_index = next((i for i, p in enumerate(all_places) if "hotel" in p["name"].lower()), 0)
+            hotel = all_places.pop(hotel_index)
+            hotel["is_hotel"] = True
+
+            # Mark others and sort by distance from hotel
+            for p in all_places:
+                p["is_hotel"] = False
+                p["distance_from_hotel"] = haversine(hotel["lat"], hotel["lng"], p["lat"], p["lng"])
+
+            attractions = sorted(all_places, key=lambda p: p["distance_from_hotel"])
+
+            ordered_place_details = [hotel] + attractions
+
+        # Annotate visited status
+        for p in ordered_place_details:
+            p["all_visited"] = all_visited
+
         traveller = Traveller.objects.get(profile=request.user)
 
         context = {
@@ -526,9 +486,11 @@ class TripDetailView(View):
             "places": ordered_place_details,
             "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
             "traveller": traveller,
-            "razorpay_key": settings.RAZORPAY_PUBLIC_KEY,  # Or hardcode for now
+            "razorpay_key": settings.RAZORPAY_PUBLIC_KEY,
         }
         return render(request, "explore/trip_detail.html", context)
+
+
 
 # New logic to mark visited places (based on proximity)
 @csrf_exempt
@@ -590,90 +552,3 @@ def check_trip_progress(request):
         "visited_places": visited,
         "all_visited": all_visited
     })
-
-
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class TripEditView(View):
-#     def post(self, request, *args, **kwargs):
-#         if not request.user.is_authenticated:
-#             return JsonResponse({'error': 'Login required.'}, status=401)
-
-#         try:
-#             data = json.loads(request.body)
-#             uuid = data.get("uuid")
-#             name = data.get("name")
-#             city = data.get("city")
-#             place_ids = data.get("place_ids", [])
-
-#             if not uuid or not name or not city or not place_ids:
-#                 return JsonResponse({'error': 'Missing required fields.'}, status=400)
-
-#             trip = get_object_or_404(Trip, uuid=uuid, user=request.user)
-
-#             # Process places
-#             hotel_id = None
-#             hotel_lat = hotel_lng = None
-#             attraction_data = []
-
-#             for pid in place_ids:
-#                 result = get_place_detail(pid)
-#                 if not result:
-#                     continue
-#                 lat = result["geometry"]["location"]["lat"]
-#                 lng = result["geometry"]["location"]["lng"]
-#                 types = result.get("types", [])
-
-#                 is_lodging = "lodging" in types
-#                 is_hotel_keyword = any(word in result.get("name", "").lower() for word in ["hotel", "inn", "resort", "hostel", "homestay"])
-
-#                 if (is_lodging or is_hotel_keyword) and not hotel_id:
-#                     hotel_id = pid
-#                     hotel_lat = lat
-#                     hotel_lng = lng
-#                 else:
-#                     attraction_data.append({'place_id': pid, 'lat': lat, 'lng': lng})
-
-#             if not hotel_id:
-#                 return JsonResponse({'error': 'At least one hotel must be selected.'}, status=400)
-
-#             for place in attraction_data:
-#                 place['distance'] = haversine(hotel_lat, hotel_lng, place['lat'], place['lng'])
-
-#             attraction_data.sort(key=lambda x: x['distance'])
-
-#             ordered_place_ids = [hotel_id] + [a['place_id'] for a in attraction_data]
-
-#             coords = [(hotel_lat, hotel_lng)] + [(a['lat'], a['lng']) for a in attraction_data]
-#             total_distance = sum(haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]) for i in range(1, len(coords)))
-
-#             # Update trip
-#             trip.name = name
-#             trip.city = city
-#             trip.place_ids = ordered_place_ids
-#             trip.distance = round(total_distance, 2)
-#             trip.final_place_lat = coords[-1][0]
-#             trip.final_place_lng = coords[-1][1]
-#             trip.visited_places = []
-#             trip.save()
-
-#             return JsonResponse({"success": True, "trip_id": str(trip.uuid), "distance": round(total_distance, 2)})
-
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
-
-# @method_decorator(login_required, name='dispatch')
-# class TripEditFormView(View):
-#     def get(self, request, uuid):
-#         trip = get_object_or_404(Trip, uuid=uuid, user=request.user)
-
-#         context = {
-#             "trip": trip,
-#             "page": "planner-edit-page",
-#             "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
-#             "place_ids": trip.place_ids,
-#             "city": trip.city,
-#             "name": trip.name,
-#         }
-#         return render(request, "explore/planner_edit.html", context)
