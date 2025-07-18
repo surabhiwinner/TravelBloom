@@ -190,6 +190,7 @@ async function loadPlaces(city, kind) {
         <span><strong class="me-2 text-primary">(${code})</strong><strong>${p.name}</strong><br><small>${p.formatted_address}</small></span>
       </label>`;
     container.insertAdjacentHTML("beforeend", html);
+    
   });
 
   container.innerHTML = container.innerHTML.replace("Loading…", "");

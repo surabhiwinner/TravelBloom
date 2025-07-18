@@ -88,6 +88,8 @@ WANTED_TYPES = {
     "attraction": ["tourist_attraction", "point_of_interest", "museum","sea","beach","lake", "zoo", "park", "amusement_park"]
 }
 
+
+
 def is_relevant_place(place):
     name = place.get("name", "").lower()
     types = place.get("types", [])
@@ -196,23 +198,47 @@ def save_trip(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
+            place_ids = data.get("place_ids", [])
+            hotel_id = data.get("hotel_id")
 
+            # Fetch coordinates of all places
+            coords = []
+            details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+            for pid in place_ids:
+                res = requests.get(details_url, params={
+                    "place_id": pid,
+                    "key": settings.GOOGLE_MAPS_API_KEY,
+                    "fields": "geometry/location"
+                }).json()
+                loc = res.get("result", {}).get("geometry", {}).get("location")
+                if loc:
+                    coords.append({"lat": loc["lat"], "lng": loc["lng"]})
+
+            # Calculate total trip distance using haversine
+            total_distance = calculate_total_distance(coords)
+
+            # Save the trip
             trip = Trip.objects.create(
                 user=request.user,
                 name=data.get("name"),
                 city=data.get("city"),
-                place_ids=data.get("place_ids"),
-                hotel_id=data.get("hotel_id"),
+                place_ids=place_ids,
+                hotel_id=hotel_id,
                 hotel_lat=data.get("hotel_lat"),
                 hotel_lng=data.get("hotel_lng"),
-                distance=data.get("distance")
+                distance=total_distance
             )
 
-            return JsonResponse({"message": "Trip saved successfully!"})
+            return JsonResponse({
+                "message": "Trip saved successfully!",
+                "distance": total_distance
+            })
+
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
 @require_POST
 @csrf_exempt
 def render_selected_list(request):
@@ -594,3 +620,8 @@ def check_trip_progress(request):
         "visited_places": visited,
         "all_visited": all_visited
     })
+
+
+
+
+
