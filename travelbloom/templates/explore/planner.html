@@ -80,6 +80,25 @@
   </div>
 </div>
 
+
+<!-- 🏨 Multiple Hotel Selection Warning Modal -->
+<div class="modal fade" id="multiHotelModal" tabindex="-1" aria-labelledby="multiHotelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="multiHotelModalLabel">Multiple Hotels Selected</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ⚠️ You are selecting more than one hotel. Please choose only one hotel for your trip.
+      </div>
+      <div class="modal-footer justify-content-end">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <!-- Styles -->
@@ -176,9 +195,22 @@ async function loadPlaces(city, kind) {
   container.innerHTML = container.innerHTML.replace("Loading…", "");
 
   document.querySelectorAll(".place-box").forEach(cb => cb.onchange = () => {
-    cb.checked ? selected.add(cb.value) : selected.delete(cb.value);
-    document.getElementById("route-btn").disabled = selected.size < 2;
+  cb.checked ? selected.add(cb.value) : selected.delete(cb.value);
+
+  // Count selected hotels
+  const selectedHotels = [...selected].filter(pid => {
+    const place = allPlaces.find(p => p.place_id === pid);
+    return place?.kind === "hotel";
   });
+
+  if (selectedHotels.length > 1) {
+    const modal = new bootstrap.Modal(document.getElementById("multiHotelModal"));
+    modal.show();
+  }
+
+  document.getElementById("route-btn").disabled = selected.size < 2;
+});
+
 }
 
 function toggleRouteBtn(state) {
