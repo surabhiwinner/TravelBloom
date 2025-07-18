@@ -223,13 +223,12 @@
 
 
 
-                         {% user_role_checking request 'Admin,User' as allow %}
-                        {% if allow %}
+                         
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'planner-page' %}text-white {% else %}fw-bold text-secondary{% endif %}" href="{% url 'planner' %}">Trip Planner</a>
                         </li>
                        
-                        {% endif %}
+                        
 
 
                         {% user_role_checking request 'Admin,User' as allow %}

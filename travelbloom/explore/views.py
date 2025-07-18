@@ -78,7 +78,8 @@ def save_user_location(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An internal server error occurred: {str(e)}'}, status=500)
 
-UNWANTED_KEYWORDS = ["gym","bank", "fitness", "lab","stop", "hospital", "clinic", "pharmacy"]
+
+# UNWANTED_KEYWORDS = ["gym","bank", "fitness", "lab","stop", "hospital", "clinic", "pharmacy"]
 WANTED_TYPES = {
     # "bus_station": ["bus_station"],
     # "train_station": ["train_station"],
@@ -87,14 +88,100 @@ WANTED_TYPES = {
     "attraction": ["tourist_attraction", "point_of_interest", "museum","sea","beach","lake", "zoo", "park", "amusement_park"]
 }
 
-def is_relevant_place(place, kind):
+def is_relevant_place(place):
     name = place.get("name", "").lower()
     types = place.get("types", [])
-    if any(bad in name for bad in UNWANTED_KEYWORDS):
+
+    for keyword in UNWANTED_KEYWORDS:
+        if keyword in name:
+            return False
+
+    # Must have a photo and name
+    if not place.get("photos") or not place.get("name"):
         return False
-    if kind in WANTED_TYPES:
-        return any(t in types for t in WANTED_TYPES[kind])
+
+    # Accept if it’s marked as tourist or point of interest
+    if "tourist_attraction" in types or "point_of_interest" in types:
+        return True
+
     return True
+
+
+
+UNWANTED_KEYWORDS = ["gym", "bank", "fitness", "lab", "stop", "hospital", "clinic", "pharmacy"]
+
+@require_POST
+@csrf_exempt
+def fetch_places(request):
+    try:
+        data = json.loads(request.body)
+        city = data.get("city")
+        kind = data.get("kind")
+        lat = data.get("lat")
+        lng = data.get("lng")
+
+        api_key = settings.GOOGLE_MAPS_API_KEY
+
+        results = []
+
+        # ----------------------------
+        # 1️⃣ Try Text Search for Attractions
+        # ----------------------------
+        if kind == "attraction":
+            query = f"things to do in {city}"
+            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+            params = {
+                "query": query,
+                "key": api_key,
+            }
+            response = requests.get(url, params=params)
+            results = response.json().get("results", [])
+
+        # ----------------------------
+        # 2️⃣ Try Nearby Search for others
+        # ----------------------------
+        elif lat and lng:
+            url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+            params = {
+                "location": f"{lat},{lng}",
+                "radius": 20000,  # expanded radius
+                "type": kind,
+                "key": api_key,
+            }
+            response = requests.get(url, params=params)
+            results = response.json().get("results", [])
+
+            # Fallback to text search if nearby gives no results
+            if not results:
+                query = f"{kind} in {city}"
+                url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+                params = {
+                    "query": query,
+                    "key": api_key,
+                }
+                response = requests.get(url, params=params)
+                results = response.json().get("results", [])
+
+        # ----------------------------
+        # 3️⃣ Fallback Text Search if no lat/lng
+        # ----------------------------
+        else:
+            query = f"{kind} in {city}"
+            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+            params = {
+                "query": query,
+                "key": api_key,
+            }
+            response = requests.get(url, params=params)
+            results = response.json().get("results", [])
+
+        # Filter results
+        filtered_results = [p for p in results if is_relevant_place(p)]
+
+        return JsonResponse({"results": filtered_results})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def get_place_detail(place_id):
@@ -102,8 +189,9 @@ def get_place_detail(place_id):
     response = requests.get(url)
     return response.json().get("result", {})
 
-@csrf_exempt
-@login_required
+
+@csrf_exempt  # CSRF is handled via token in JS
+@login_required(login_url="/login/")
 def save_trip(request):
     if request.method == "POST":
         try:
@@ -124,8 +212,7 @@ def save_trip(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-    return JsonResponse({"error": "Invalid request"}, status=400)
-
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 @require_POST
 @csrf_exempt
 def render_selected_list(request):
@@ -209,51 +296,6 @@ class PlannerView(View):
         return render(request, 'explore/planner.html', context=data)
 
 
-@require_POST
-@csrf_exempt
-def fetch_places(request):
-    try:
-        data = json.loads(request.body)
-        city = data.get("city")
-        kind = data.get("kind")
-        lat = data.get("lat")
-        lng = data.get("lng")
-
-        api_key = settings.GOOGLE_MAPS_API_KEY
-
-        # Use Text Search for attractions regardless of lat/lng
-        if kind == "attraction":
-            query = f"{kind} in {city}"
-            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-            params = {
-                "query": query,
-                "key": api_key,
-            }
-        elif lat and lng:
-            url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-            params = {
-                "location": f"{lat},{lng}",
-                "radius": 8000,
-                "type": kind,
-                "key": api_key,
-            }
-        else:
-            query = f"{kind} in {city}"
-            url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-            params = {
-                "query": query,
-                "key": api_key,
-            }
-
-        response = requests.get(url, params=params)
-        results = response.json().get("results", [])
-
-        filtered_results = [p for p in results if is_relevant_place(p, kind)]
-
-        return JsonResponse({"results": filtered_results})
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
 
 def haversine(lat1, lon1, lat2, lon2):

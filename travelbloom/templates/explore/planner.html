@@ -36,17 +36,50 @@
   </div>
 
   <!-- 🚗 Buttons -->
-  <div class="text-center my-4">
-    <button id="route-btn" class="btn btn-success btn-lg" disabled>
-      <span class="spinner-border spinner-border-sm d-none"></span>
-      <span class="btn-text">🚗 Build Smart Route</span>
-    </button>
+<div class="text-center my-4">
+  <button id="route-btn" class="btn btn-success btn-lg" disabled>
+    <span class="spinner-border spinner-border-sm d-none"></span>
+    <span class="btn-text">🚗 Build Smart Route</span>
+  </button>
+
+  {% if user.is_authenticated %}
     <button id="save-trip-btn" class="btn btn-outline-primary ms-3" disabled>💾 Save This Trip</button>
+  {% endif %}
+</div>
+
+<!-- 🔔 Toast for Login Prompt -->
+<!-- <div id="login-toast" class="toast align-items-center text-white bg-dark border-0 position-fixed bottom-0 end-0 m-4" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 9999; min-width: 350px;">
+  <div class="d-flex">
+    <div class="toast-body fs-5">
+      🚀 <strong>Login</strong> or <strong>Register</strong> to unlock full trip features!
+    </div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
   </div>
+</div> -->
 
   <!-- 🗺️ Map & List -->
   <div id="route-map" class="d-none rounded shadow-sm mb-4" style="height: 400px;"></div>
   <div class="selected-places"></div>
+
+  <!-- 💬 Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="loginModalLabel">Unlock Smart Features</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        🚀 <strong>Login or Register</strong> to save trips, view smart routes, and access more features.
+      </div>
+      <div class="modal-footer justify-content-between">
+        <a href="{% url 'login' %}" class="btn btn-outline-primary">Login</a>
+        <a href="{% url 'register' %}" class="btn btn-primary">Register</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <!-- Styles -->
@@ -97,19 +130,17 @@ async function doSearch() {
   });
 
   document.getElementById("route-btn").disabled = true;
-  document.getElementById("save-trip-btn").disabled = true;
+  const saveBtn = document.getElementById("save-trip-btn");
+  if (saveBtn) saveBtn.disabled = true;
 
   await Promise.all([
     loadPlaces(city, "attraction"),
     loadPlaces(city, "hotel"),
-    // loadPlaces(city, "bus_station"),
-    // loadPlaces(city, "train_station"),
-    // loadPlaces(city, "airport")
   ]);
 }
 
 async function loadPlaces(city, kind) {
-  const box = kind === "hotel" ? "#hotels" : kind === "attraction" ? "#attractions" : "#travelpoints";
+  const box = kind === "hotel" ? "#hotels" : "#attractions";
   const container = document.querySelector(box);
 
   if (!container.dataset.loaded) {
@@ -213,7 +244,6 @@ async function buildRoute() {
       dirRend.setDirections(dirs);
       renderSelectedList(ids, dirs.routes[0].legs);
 
-      // custom markers
       const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       if (window.customMarkers) window.customMarkers.forEach(m => m.setMap(null));
       window.customMarkers = [];
@@ -227,7 +257,9 @@ async function buildRoute() {
         }
       });
 
-      document.getElementById("save-trip-btn").disabled = false;
+      const saveBtn = document.getElementById("save-trip-btn");
+      if (saveBtn) saveBtn.disabled = false;
+
       toggleRouteBtn("idle");
       isRouting = false;
     });
@@ -242,9 +274,7 @@ function renderSelectedList(ids, legs) {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const html = ids.map((pid, i) => {
     const p = allPlaces.find(o => o.place_id === pid) || {};
-    const icon = (p.kind === "hotel") ? "🏨"
-      
-            : "📍";
+    const icon = (p.kind === "hotel") ? "🏨" : "📍";
     const dist = (i > 0 && legs[i - 1]) ? ` — ${legs[i - 1].distance.text}` : "";
     return `<li class="mb-2"><strong class="text-primary">(${letters[i]})</strong> ${icon} ${p.name}${dist}</li>`;
   }).join("");
@@ -255,55 +285,60 @@ function renderSelectedList(ids, legs) {
     </div>`;
 }
 
-document.getElementById("save-trip-btn").addEventListener("click", async () => {
-  const city = document.getElementById("city-input").value.trim();
-  if (!city || selected.size < 2) return alert("No route to save.");
-  const name = prompt("Give this trip a name:", `Trip to ${city}`);
-  if (!name) return;
+const saveBtn = document.getElementById("save-trip-btn");
+if (saveBtn) {
+  saveBtn.addEventListener("click", async () => {
+    const city = document.getElementById("city-input").value.trim();
+    if (!city || selected.size < 2) return alert("No route to save.");
+    const name = prompt("Give this trip a name:", `Trip to ${city}`);
+    if (!name) return;
 
-  const btn = document.getElementById("save-trip-btn");
-  btn.disabled = true;
+    saveBtn.disabled = true;
 
-  // Get all selected places
-  const selectedPlaceIds = [...selected];
-  const selectedPlaces = selectedPlaceIds.map(pid => allPlaces.find(p => p.place_id === pid)).filter(Boolean);
+    const selectedPlaceIds = [...selected];
+    const selectedPlaces = selectedPlaceIds.map(pid => allPlaces.find(p => p.place_id === pid)).filter(Boolean);
 
-  // Extract hotel info
-  const hotel = selectedPlaces.find(p => p.kind === "hotel");
-  const hotel_id = hotel?.place_id || null;
-  const hotel_lat = hotel?.geometry?.location?.lat || null;
-  const hotel_lng = hotel?.geometry?.location?.lng || null;
+    const hotel = selectedPlaces.find(p => p.kind === "hotel");
+    const hotel_id = hotel?.place_id || null;
+    const hotel_lat = hotel?.geometry?.location?.lat || null;
+    const hotel_lng = hotel?.geometry?.location?.lng || null;
+    const distance = 0;
 
-  // Estimate distance (dummy or optional, based on backend handling)
-  const distance = 0;  // You can calculate total distance using legs data if available
+    const payload = {
+      name,
+      city,
+      place_ids: selectedPlaceIds,
+      hotel_id,
+      hotel_lat,
+      hotel_lng,
+      distance,
+      places: selectedPlaces.map(p => ({ place_id: p.place_id, name: p.name }))
+    };
 
-  const payload = {
-    name,
-    city,
-    place_ids: selectedPlaceIds,
-    hotel_id,
-    hotel_lat,
-    hotel_lng,
-    distance,
-    places: selectedPlaces.map(p => ({ place_id: p.place_id, name: p.name }))
-  };
+    const res = await fetch("{% url 'save_trip' %}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-  const res = await fetch("{% url 'save_trip' %}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    const data = await res.json();
+    if (res.ok) {
+      alert("Trip saved! ✅");
+      window.location.href = "{% url 'your-trip' %}";
+    } else {
+      alert("Error: " + (data.error || "Could not save trip"));
+      saveBtn.disabled = false;
+    }
   });
+} else {
+  document.getElementById("route-btn").addEventListener("click", () => {
+    if (selected.size < 2) return;
 
-  const data = await res.json();
-  if (res.ok) {
-    alert("Trip saved! ✅");
-    window.location.href = "{% url 'your-trip' %}";
-  } else {
-    alert("Error: " + (data.error || "Could not save trip"));
-    btn.disabled = false;
-  }
-});
-
+    // Show Bootstrap modal
+    const loginModal = new bootstrap.Modal(document.getElementById("loginModal"));
+    loginModal.show();
+  });
+}
 
 // ✅ Ensure initPlanner runs after Google Maps is ready
 window.addEventListener("load", () => {
@@ -315,4 +350,5 @@ window.addEventListener("load", () => {
   }, 100);
 });
 </script>
+
 {% endblock %}

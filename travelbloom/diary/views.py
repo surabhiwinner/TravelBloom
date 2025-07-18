@@ -43,7 +43,7 @@ class HomeView(View):
         else:
             context['traveller'] = None
 
-            print(traveller.uuid,'none')
+            # print(traveller.uuid,'none')
 
 
         
