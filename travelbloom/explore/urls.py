@@ -2,6 +2,8 @@ from django.urls import path
 from . import views
 
 
+
+
 from .views import save_trip, save_user_location
 urlpatterns = [
         path('map/', views.map_view, name='map'),
@@ -39,6 +41,6 @@ urlpatterns = [
 
     # path('api/hotel-offers/', views.HotelOffersView.as_view(), name='hotel_offers'),
 
-
+    path('send-trip-whatsapp/', views.SendMessageView.as_view(), name='send_trip_whatsapp'),
 
 ]

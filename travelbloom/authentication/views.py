@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction,IntegrityError
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.hashers import make_password
@@ -83,34 +83,40 @@ class RegisterTravellerView(View):
         print("Traveller Form Errors:", traveller_form.errors)
 
         if profile_form.is_valid() and traveller_form.is_valid():
-            with transaction.atomic():
-                profile = profile_form.save(commit=False)
 
-                email = profile_form.cleaned_data.get('email')
-                password = profile_form.cleaned_data.get('password')
+            try:
+                with transaction.atomic():
+                    profile = profile_form.save(commit=False)
 
-                profile.username = email
-                profile.role = 'User'
-                profile.date_joined = timezone.now()
-                profile.password = make_password(password)
+                    email = profile_form.cleaned_data.get('email')
+                    password = profile_form.cleaned_data.get('password')
 
-                profile.save()
-                
+                    profile.username = email
+                    profile.role = 'User'
+                    profile.date_joined = timezone.now()
+                    profile.password = make_password(password)
 
-                traveller = traveller_form.save(commit=False)
-                traveller.profile = profile
-                traveller.name = f'{profile.first_name} {profile.last_name}'
-                traveller.email = profile.email
-                traveller.save()
+                    profile.save()
+                    
 
-                # send email
-                subject = 'Successfully Registered !!!'
-                recipient = profile.email
-                template = 'emails/success-registration.html'
-                context = {'name': traveller.name, 'username': profile.username, 'password': password}
-                threading.Thread(target=send_email, args=(subject, recipient, template, context)).start()
+                    traveller = traveller_form.save(commit=False)
+                    traveller.profile = profile
+                    traveller.name = f'{profile.first_name} {profile.last_name}'
+                    traveller.email = profile.email
+                    traveller.save()
 
-                return redirect('login')
+                    # send email
+                    subject = 'Successfully Registered !!!'
+                    recipient = profile.email
+                    template = 'emails/success-registration.html'
+                    context = {'name': traveller.name, 'username': profile.username, 'password': password}
+                    threading.Thread(target=send_email, args=(subject, recipient, template, context)).start()
+
+                    return redirect('login')
+            except IntegrityError:
+
+                profile_form.add_error(None, "A traveller with this profile already exists.")
+
 
         # Show errors if form is invalid
         return render(request, 'authentication/register_user.html', {

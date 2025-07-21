@@ -34,21 +34,16 @@ class HomeView(View):
             try:
                 traveller = Traveller.objects.get(profile=request.user)
                 context['traveller'] = traveller
-
-                print(traveller.uuid,'exist')
+                print(traveller.uuid, 'exist')
             except Traveller.DoesNotExist:
                 context['traveller'] = None
-
-                print(traveller.uuid,'not')
+                print('Traveller does not exist for this user')
         else:
             context['traveller'] = None
-
-            # print(traveller.uuid,'none')
-
-
-        
+            print('User is not authenticated')
 
         return render(request, 'diary/home.html', context)
+
 
 
 class DiaryEntryWriteView(View):

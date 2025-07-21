@@ -12,6 +12,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 # to secure sensitive settings, use python-decouple 
 # such as SECRET_KEY.
+
+import os
+
+from  dotenv import load_dotenv
+load_dotenv()
+
 from decouple import config
 
 from pathlib import Path
@@ -201,3 +207,19 @@ RAZORPAY_SECRET_KEY = config('RAZORPAY_SECRET_KEY')
 
 AMADEUS_API_KEY = config('AMADEUS_KEY')
 AMADEUS_API_SECRET = config('AMADEUS__SECRET')
+
+
+# twilio account
+
+TWILIO_ACCOUNT_SID =config('SID__')
+TWILIO_AUTH_TOKEN =config('_TOKEN')
+TWILIO_WHATSAPP_NUMBER =config('NUM_')
+
+
+
+
+
+
+# whatsapp meta api
+WHATSAPP_ACCESS_TOKEN = config('WHATSAPP_ACCESS_TOKEN')
+WHATSAPP_PHONE_NUMBER_ID = config('WHATSAPP_PHONE_NUMBER_ID')

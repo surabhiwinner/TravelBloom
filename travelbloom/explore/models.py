@@ -50,6 +50,7 @@ class Trip(BaseClass):
     hotel_lat = models.FloatField(blank=True, null=True)
     hotel_lng = models.FloatField(blank=True, null=True)
     places = models.JSONField(default=list, blank=True)
+    
 
     
     place_ids = models.JSONField(help_text="List of Google Place IDs in selected order")

@@ -11,12 +11,18 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
 
 import json
+
+from django.views.decorators.csrf import csrf_exempt
+
+from .utils import send_trip_whatsapp # adjust path if needed
 # Create your views here.
 from django.views import View
 
 from .models import Touristplace,Trip
 
 from django.conf import settings
+
+from twilio.rest import Client
 
 from google import generativeai as genai  # new client class
 
@@ -192,52 +198,101 @@ def get_place_detail(place_id):
     return response.json().get("result", {})
 
 
-@csrf_exempt  # CSRF is handled via token in JS
-@login_required(login_url="/login/")
+@csrf_exempt
+@login_required
 def save_trip(request):
     if request.method == "POST":
+        data = json.loads(request.body)
+        # places = data.get('places', [])
+        
+
+        # if not places:
+        #     return JsonResponse({"error": "No places provided."}, status=400)
+        
+                # ✅ Prepare data for distance calculation
+        
+        # try:
+        #     place_coords = [{"lat": float(p["lat"]), "lng": float(p["lng"])} for p in places]
+        # except (KeyError, TypeError, ValueError) as e:
+        #     return JsonResponse({"error": f"Invalid place format: {str(e)}"}, status=400)
+
+
+        
+         # Calculate total distance
+        # total_distance = calculate_total_distance(place_coords)
+
+        trip = Trip.objects.create(
+            user=request.user,
+            name=data.get("name"),
+            city=data.get("city"),
+            hotel_id=data.get("hotel_id"),
+            hotel_lat=data.get("hotel_lat"),
+            hotel_lng=data.get("hotel_lng"),
+            distance=data.get("distance",0),
+            places=data.get("places", []),
+            place_ids=data.get("place_ids", []),
+            final_place_lat=data.get("final_place_lat"),
+            final_place_lng=data.get("final_place_lng"),
+        )
+
+        # ✅ Send WhatsApp message after trip is saved
         try:
-            data = json.loads(request.body)
-            place_ids = data.get("place_ids", [])
-            hotel_id = data.get("hotel_id")
+            traveller = Traveller.objects.get(profile=request.user)
+            recipient_number = f"91{traveller.number}"
 
-            # Fetch coordinates of all places
-            coords = []
-            details_url = "https://maps.googleapis.com/maps/api/place/details/json"
-            for pid in place_ids:
-                res = requests.get(details_url, params={
-                    "place_id": pid,
-                    "key": settings.GOOGLE_MAPS_API_KEY,
-                    "fields": "geometry/location"
-                }).json()
-                loc = res.get("result", {}).get("geometry", {}).get("location")
-                if loc:
-                    coords.append({"lat": loc["lat"], "lng": loc["lng"]})
+            print("Traveller found:", traveller)
+            print("Recipient number:", recipient_number)
 
-            # Calculate total trip distance using haversine
-            total_distance = calculate_total_distance(coords)
+            message = f"""
+🌍 Trip Confirmation: {trip.name}
 
-            # Save the trip
-            trip = Trip.objects.create(
-                user=request.user,
-                name=data.get("name"),
-                city=data.get("city"),
-                place_ids=place_ids,
-                hotel_id=hotel_id,
-                hotel_lat=data.get("hotel_lat"),
-                hotel_lng=data.get("hotel_lng"),
-                distance=total_distance
+📍 City: {trip.city}
+📏 Distance: {trip.distance:.2f} km
+🗺️ Status: {trip.status}
+🏨 Hotel: {'Yes' if trip.hotel_id else 'No hotel selected'}
+🧭 Places Chosen: {len(trip.places)}
+
+{f'🚦 Started At: {localtime(trip.started_at).strftime("%d %b %Y, %I:%M %p")}' if trip.started_at else ''}
+            """.strip()
+
+            print("WhatsApp message content:", message)
+
+
+            access_token = settings.WHATSAPP_ACCESS_TOKEN
+            phone_number_id = settings.WHATSAPP_PHONE_NUMBER_ID
+
+            print("Using access token:", access_token)
+            print("Phone number ID:", phone_number_id)
+
+            print("Sending WhatsApp message to:", recipient_number)
+
+            status_code, meta_response = send_trip_whatsapp(
+                access_token=access_token,
+                phone_number_id=phone_number_id,
+                to_number=recipient_number,
+                message_text=message
             )
-
+            print("WhatsApp status:", status_code)
+            print("WhatsApp response:", meta_response)
             return JsonResponse({
-                "message": "Trip saved successfully!",
-                "distance": total_distance
+                "message": "Trip saved successfully and WhatsApp message sent",
+                "trip_id": trip.id,
+                "whatsapp_status": status_code,
+                "whatsapp_response": meta_response
             })
+        
+        except Traveller.DoesNotExist:
+            return JsonResponse({"message": "Trip saved but traveller not found"}, status=200)
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            return JsonResponse({
+                "message": "Trip saved, but error sending WhatsApp message",
+                "trip_id": trip.id,
+                "error": str(e)
+            })
+        
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
-    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 @require_POST
 @csrf_exempt
@@ -625,3 +680,67 @@ def check_trip_progress(request):
 
 
 
+# explore/views.py (or wherever your SendMessageView lives)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class SendMessageView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            trip_uuid = data.get('uuid')
+
+            if not trip_uuid:
+                return JsonResponse({'error': 'Missing trip UUID'}, status=400)
+
+            try:
+                trip = Trip.objects.get(uuid=trip_uuid)
+            except Trip.DoesNotExist:
+                return JsonResponse({'error': 'Trip not found'}, status=404)
+
+            try:
+                traveller = Traveller.objects.get(profile=trip.user)
+                recipient_number = f"91{traveller.number}"
+            except Traveller.DoesNotExist:
+                return JsonResponse({'error': 'Traveller not found'}, status=404)
+
+            message = f"""
+🌍 Trip Confirmation: {trip.name}
+
+📍 City: {trip.city}
+📏 Distance: {trip.distance:.2f} km
+🗺️ Status: {trip.status}
+🏨 Hotel: {'Yes' if trip.hotel_id else 'No hotel selected'}
+🧭 Places Chosen: {len(trip.places)}
+
+{f'🚦 Started At: {localtime(trip.started_at).strftime("%d %b %Y, %I:%M %p")}' if trip.started_at else ''}
+            """.strip()
+
+            access_token = settings.WHATSAPP_ACCESS_TOKEN
+            phone_number_id = settings.WHATSAPP_PHONE_NUMBER_ID
+
+            print("🟢 WhatsApp Message Sending from Django")
+            print("🧾 UUID:", trip_uuid)
+            print("📞 To:", recipient_number)
+            print("💬 Message:", message)
+            print("🔐 Token:", access_token[:12], "...")
+
+            status_code, meta_response = send_trip_whatsapp(
+                access_token=access_token,
+                phone_number_id=phone_number_id,
+                to_number=recipient_number,
+                message_text=message
+            )
+
+            print("✅ WhatsApp API response:", status_code, meta_response)
+
+            return JsonResponse({
+                'message': 'Sent',
+                'status': status_code,
+                'meta_response': meta_response
+            })
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

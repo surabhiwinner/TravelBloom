@@ -25,18 +25,18 @@ class Profile(AbstractUser):
 
         verbose_name = 'Profile'
 
-        verbose_name_plural = 'Profile'
+        verbose_name_plural = 'Profiles'
 
 
 class Traveller(BaseClass):
 
-    profile = models.ForeignKey('Profile', on_delete=models.CASCADE)
+    profile = models.OneToOneField('Profile', on_delete=models.CASCADE,related_name='traveller')
 
     name = models.CharField(max_length=40)
 
     email = models.EmailField()
 
-    image = models.ImageField(upload_to='Traveller-image')
+    image = models.ImageField(upload_to='Traveller-images/', blank=True, null=True)
 
     number = models.CharField(max_length=10)
 
@@ -50,7 +50,7 @@ class Traveller(BaseClass):
 
         verbose_name = 'Traveller'
 
-        verbose_name_plural = 'Traveller'
+        verbose_name_plural = 'Travellers'
 
     
 

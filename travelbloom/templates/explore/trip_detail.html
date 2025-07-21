@@ -74,9 +74,13 @@
          class="btn btn-outline-primary mt-4">
          ▶️ Start Directions in Google Maps
       </a>
+
     </div>
   </div>
+
+  
 </div>
+
 
 <!-- JSON Data -->
 {{ places|json_script:"trip-stops-data" }}
@@ -139,6 +143,29 @@
       }
     });
   }
+
+  document.getElementById("whatsapp-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const phone_number = document.getElementById("phone_number").value;
+  const trip_id = document.getElementById("trip_id").value;
+
+  fetch("/explore/send-trip-whatsapp/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token }}"
+    },
+    body: JSON.stringify({
+      phone_number: phone_number,
+      trip_id: trip_id
+    })
+  })
+  .then(res => res.json())
+  .then(data => alert(data.message))
+  .catch(err => console.error(err));
+});
+
 
   function setDirectionLink(stops) {
     if (stops.length < 2) return;
