@@ -35,7 +35,7 @@ SECRET_KEY = config('_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['SmartVoyegerSurabhi.pythonanywhere.com']
 
 
 # Application definition
