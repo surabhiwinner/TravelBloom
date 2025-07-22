@@ -9,7 +9,7 @@
     <h3 style="text-align: center; color: #0d6efd; margin-top: 2rem;">Processing your premium unlock...</h3>
 
     <script>
-    var redirectUrl = "{{ return_url|default:'/' }}";  // Already confirmed
+    var redirectUrl = "{{ return_url|default:'/home/' }}";  // Already confirmed
 
     var options = {
         "key": "{{ client_id }}",

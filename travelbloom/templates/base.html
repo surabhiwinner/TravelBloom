@@ -244,9 +244,32 @@
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'blog-page' %}text-white {% else %} fw-bold text-secondary{% endif %}" href="{% url 'blog-list' %}">Blog</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if page == 'contact-page' %}text-white{% else %} fw-bold text-secondary{% endif %}" href="{% url 'contact' %}">Contact</a>
-                        </li>
+
+
+  {% if request.user.is_authenticated %}
+  {% if request.user.traveller.has_premium_access %}
+    <li class="nav-item">
+      <a class="nav-link {% if page == 'contact-page' %}text-white{% else %}fw-bold text-secondary{% endif %}" href="{% url 'contact' %}">
+        Contact
+      </a>
+    </li>
+  {% else %}
+    <li class="nav-item">
+      <a class="btn btn-sm btn-warning fw-bold ms-2" style="background-color: gold;" href="{% url 'razorpay-page' request.user.traveller.uuid %}">
+        Unlock Premium
+      </a>
+    </li>
+  {% endif %}
+{% else %}
+  <li class="nav-item">
+    <a class="nav-link {% if page == 'contact-page' %}text-white{% else %}fw-bold text-secondary{% endif %}" href="{% url 'contact' %}">
+      Contact
+    </a>
+  </li>
+{% endif %}
+
+
+
 {% if request.user.is_authenticated %}
     <div class="nav-item dropdown">
         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" data-bs-toggle="dropdown">

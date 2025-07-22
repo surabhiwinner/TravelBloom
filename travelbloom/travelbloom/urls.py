@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
+from diary.views import HomeView
 from django.conf.urls.static import static
 
 from django.conf import settings
@@ -30,6 +30,8 @@ urlpatterns = [
     path('chatbot/',include('chatbot.urls')),
     path('blogs/',include('blog.urls')),
     path('payment/', include('payments.urls')),
+    path('', HomeView.as_view(), name= 'home'),
+    
 
 ]
 

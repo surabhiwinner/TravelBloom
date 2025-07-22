@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block section %}
 <style>
@@ -53,16 +54,21 @@
   }
 </style>
 
-
-<div class="container" style="padding: 20px;">
+<div class="container py-4">
 
   {% if user.is_authenticated %}
     <h2 class="section-title">📔 My Diary Gallery</h2>
     <div class="gallery-section">
       {% for photo in diary_photos %}
         <div class="gallery-item">
-          <img src="{{ photo.image.url }}" alt="Diary Photo">
-          <div class="caption">{{ photo.caption }}</div>
+          {% with photo.diary.media_files.all.0 as preview %}
+            {% if preview %}
+              <img src="{{ preview.file.url }}" alt="Diary Photo">
+            {% else %}
+              <img src="{% static 'images/no-preview.png' %}" alt="No Preview">
+            {% endif %}
+          {% endwith %}
+          <div class="caption">{{ photo.diary.title }}</div>
           <div class="timestamp">Saved in {{ photo.created_at|date:"F Y" }}</div>
         </div>
       {% empty %}
@@ -75,8 +81,12 @@
   <div class="gallery-section">
     {% for post in blog_photos %}
       <div class="gallery-item">
-        <img src="{{ post.image.url }}" alt="Blog Image">
-        <div class="caption">{{ post.caption }}</div>
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="Blog Image">
+        {% else %}
+          <img src="{% static 'images/no-preview.png' %}" alt="No Image">
+        {% endif %}
+        <div class="caption">{{ post.title }}</div>
         <div class="timestamp">Posted in {{ post.created_at|date:"F Y" }}</div>
       </div>
     {% empty %}

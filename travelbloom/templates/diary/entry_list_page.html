@@ -75,28 +75,45 @@
     });
   </script>
 
-  <!-- Premium Unlock Modal -->
-  <div class="modal fade" id="premiumModal" tabindex="-1" aria-labelledby="premiumModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content shadow-lg">
-        <div class="modal-header bg-warning">
-          <h5 class="modal-title text-dark fw-bold" id="premiumModalLabel">🚀 Unlock Premium Features</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center">
-          <p class="lead mb-3">
-            Pay just <strong>₹99</strong> to unlock Smart Trip Planning, Priority Support, advanced diary storage, and more.
-          </p>
-          {% if request.user.is_authenticated and request.user.traveller and request.user.traveller.uuid %}
-            <a href="{% url 'razorpay-page' request.user.traveller.uuid %}" class="btn btn-primary px-4 py-2">
-              Unlock Now
-            </a>
-          {% else %}
-            <p class="text-danger">Unable to proceed with payment. Please try logging in again.</p>
-          {% endif %}
-        </div>
+ <!-- Premium Unlock Modal -->
+<div class="modal fade" id="premiumModal" tabindex="-1" aria-labelledby="premiumModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg rounded-4 border-0">
+
+      <!-- Header -->
+      <div class="modal-header bg-warning text-dark rounded-top-4">
+        <h5 class="modal-title fw-bold" id="premiumModalLabel">
+          🚀 Unlock Premium Features
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body text-center px-4">
+        <p class="lead text-dark fw-semibold mb-3">
+          Unlock all premium tools for just <span class="text-success fw-bold">₹99</span> ✨
+        </p>
+
+        <ul class="list-unstyled text-start text-dark fs-6 mb-4">
+          <li class="mb-3">🧭 <strong>Smart Trip Planning</strong> </li>
+          <li class="mb-3">💬 <strong>WhatsApp Support</strong></li>
+          <li class="mb-3">🗺️ <strong>Shareable Map Directions</strong></li>
+          <li class="mb-3">📓 <strong>Advanced Diary Storage</strong></li>
+          <li class="mb-2">🚀 <strong>Early Feature Access</strong></li>
+        </ul>
+
+        {% if request.user.is_authenticated and request.user.traveller and request.user.traveller.uuid %}
+          <a href="{% url 'razorpay-page' request.user.traveller.uuid %}" class="btn btn-success btn-lg px-4 py-2 rounded-pill shadow-sm">
+            🔓 Unlock Now – ₹99
+          </a>
+        {% else %}
+          <p class="text-danger mt-3">Unable to proceed with payment. Please log in again.</p>
+        {% endif %}
       </div>
     </div>
   </div>
+</div>
+
+
 {% endif %}
 {% endblock %}

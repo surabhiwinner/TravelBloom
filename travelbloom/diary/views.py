@@ -230,7 +230,7 @@ class ContactView(View):
 class GalleryView(View):
     def get(self, request):
         if request.user.is_authenticated:
-            diary_photos = DiaryMedia.objects.filter(diary__profile=request.user).order_by('-created_at')
+            diary_photos = DiaryMedia.objects.filter(diary__profile=request.user, media_type ='Image').order_by('-created_at')
         else:
             diary_photos = []
 
