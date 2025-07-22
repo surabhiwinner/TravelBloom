@@ -67,15 +67,21 @@ async function initMap() {
     wrapper.innerHTML = `<div class="text-center text-muted">No tourist attractions found within 5 km.</div>`;
     return;
   }
-
+ 
   for (const data of places) {
-    const title = data.title?.text || data.display || "Unknown Place";
+    const title = data.title?.text || data.displayName || "Unknown Place";
     const address = data.formattedAddress || "No address";
     const rating = data.rating ? `${data.rating} ★` : "No rating";
     const reviews = data.userRatingCount ? `${data.userRatingCount} reviews` : "";
-    const placeLocation = data.location;
-    const distance = haversine(userLocation, placeLocation).toFixed(2);
+    
 
+    const location = data.location;
+    const placeLocation= {
+    lat: location.lat(),
+    lng: location.lng()
+  };
+    const distance = haversine(userLocation, placeLocation).toFixed(2);
+    console.log(placeLocation)
     const photoRef = data.photos?.[0]?.name?.split("/").pop();
     const image = photoRef
       ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=AIzaSyAbSSS6NtpW6Zx3czxf2M3GTRwG5v4I6YQ`
@@ -135,6 +141,8 @@ function getUserLocation() {
     );
   });
 }
+
+console.log("Place location:", placeLocation);
 
 function haversine(coord1, coord2) {
   const R = 6371;
