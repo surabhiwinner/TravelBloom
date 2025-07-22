@@ -113,21 +113,25 @@ class DiaryEntryWriteView(View):
 
 class DiaryListView(View):
     def get(self, request, *args, **kwargs):
-        diary_entries = DiaryEntry.objects.none()  # default empty queryset
+        diary_entries = DiaryEntry.objects.filter(profile=request.user)
 
-        if request.user.is_authenticated:
-            profile = request.user
-            if profile.role == 'User':
-                diary_entries = DiaryEntry.objects.filter(profile=profile)
-            elif profile.role =='Admin':
-                diary_entries = DiaryEntry.objects.all()
+        show_modal = False
+        try:
+            traveller = request.user.traveller
+            show_modal = not traveller.has_premium_access
+        except:
+            show_modal = True  # fallback if traveller not found
 
-        data = {
+        return render(request, 'diary/entry_list_page.html', {
             'diary_entries': diary_entries,
+            'show_modal': show_modal,
             'page': 'diary-page'
-        }
-        return render(request, 'diary/entry_list_page.html', context=data)
- 
+
+        })
+
+
+
+
 class DiaryEntryDetailView(View):
     def get(self, request, uuid):
         diary_entry = get_object_or_404(DiaryEntry, uuid=uuid)

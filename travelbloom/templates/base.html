@@ -247,21 +247,25 @@
                         <li class="nav-item">
                             <a class="nav-link {% if page == 'contact-page' %}text-white{% else %} fw-bold text-secondary{% endif %}" href="{% url 'contact' %}">Contact</a>
                         </li>
+{% if request.user.is_authenticated %}
+    <div class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" data-bs-toggle="dropdown">
+            <img src="{% if request.user.traveller.image %}{{ request.user.traveller.image.url }}{% else %}/static/default-user.png{% endif %}" 
+                 class="rounded-circle me-2" style="width: 30px; height: 30px;">
+            
+            <p class="fw-bold text-white ms-1 mb-0 d-flex align-items-center">
+                {% if request.user.traveller.has_premium_access %}
+                    <span title="Premium User" class="me-1 fs-4">👑</span>
+                {% endif %}
+                {{ request.user.first_name }} {{ request.user.last_name }}
+            </p>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><a class="dropdown-item" style="color: #11062e;" href="{% url 'logout' %}">Logout</a></li>
+        </ul>
+    </div>
+{% endif %}
 
-                        {% if request.user.is_authenticated %}
-                        {% user_role_checking request 'Admin,User' as allow %}
-                        {% if allow %}
-                        <div class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" data-bs-toggle="dropdown">
-                                <img src="/media/Traveller-images/user.png" class="rounded-circle me-2" style="width: 30px; height: 30px;">
-                                <p class="fw-bold text-white ms-1 mb-0">{{ user.first_name }} {{user.last_name}}</p>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item " style="color: #11062e;" href="{% url 'logout' %}">Logout</a></li>
-                            </ul>
-                        </div>
-                        {% endif %}
-                        {% endif %}
 
                         
                     </ul>

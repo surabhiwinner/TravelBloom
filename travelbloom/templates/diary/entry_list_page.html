@@ -33,7 +33,7 @@
                         </div>
 
                         <!-- Preview Image -->
-                        <div class="col-md-3 text-end ">
+                        <div class="col-md-3 text-end">
                             {% with entry.media_files.all.0 as preview %}
                                 {% if preview %}
                                     <img src="{{ preview.file.url }}" alt="Preview for {{ entry.title }}"
@@ -62,4 +62,41 @@
         </div>
     {% endif %}
 </div>
+
+<!-- Premium Modal Trigger -->
+{% if show_modal %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var modalEl = document.getElementById('premiumModal');
+      if (modalEl) {
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    });
+  </script>
+
+  <!-- Premium Unlock Modal -->
+  <div class="modal fade" id="premiumModal" tabindex="-1" aria-labelledby="premiumModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow-lg">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title text-dark fw-bold" id="premiumModalLabel">🚀 Unlock Premium Features</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <p class="lead mb-3">
+            Pay just <strong>₹99</strong> to unlock Smart Trip Planning, Priority Support, advanced diary storage, and more.
+          </p>
+          {% if request.user.is_authenticated and request.user.traveller and request.user.traveller.uuid %}
+            <a href="{% url 'razorpay-page' request.user.traveller.uuid %}" class="btn btn-primary px-4 py-2">
+              Unlock Now
+            </a>
+          {% else %}
+            <p class="text-danger">Unable to proceed with payment. Please try logging in again.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
 {% endblock %}

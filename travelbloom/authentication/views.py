@@ -33,6 +33,12 @@ class LoginView(View):
             user = authenticate(request, username=username, password=password)
             if user:
                 login(request, user)
+                try:
+                    traveller = user.traveller  # because of related_name='traveller'
+                    request.session['show_premium_modal'] = not traveller.has_premium_access
+                except Traveller.DoesNotExist:
+                    request.session['show_premium_modal'] = True  # show if no record found
+
                 return redirect('diary-list')
 
             error = 'Invalid credentials'

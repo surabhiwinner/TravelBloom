@@ -1,5 +1,6 @@
 import json
 import razorpay
+from datetime import datetime
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -37,23 +38,44 @@ class RazorpayView(View):
     def get(self, request, *args, **kwargs):
         uuid = kwargs.get('uuid')
         traveller = get_object_or_404(Traveller, uuid=uuid)
-        payment = Payments.objects.get(traveller__profile=request.user)
 
-        client = razorpay.Client(auth=(settings.config('RAZORPAY_PUBLIC_KEY'), settings.config('RAZORPAY_SECRET_KEY')))
-        data = {"amount": int(payment.amount * 100), "currency": "INR", "receipt": "order_rcptid_11"}
+        # Check if payment exists or create one
+        payment = Payments.objects.filter(traveller=traveller).first()
+        if not payment:
+            payment = Payments.objects.create(traveller=traveller, amount=99)
 
+        # Razorpay client
+        client = razorpay.Client(auth=(
+            settings.RAZORPAY_PUBLIC_KEY,
+            settings.RAZORPAY_SECRET_KEY
+        ))
+
+        # Create Razorpay order
+        order_data = {
+            "amount": int(payment.amount * 100),  # Amount in paise
+            "currency": "INR",
+            "receipt": f"receipt_{payment.pk}"
+        }
+
+         # Create transaction and order
         transaction = Transactions.objects.create(payment=payment)
-        order = client.order.create(data=data)
+        razorpay_order = client.order.create(data=order_data)
 
-        transaction.rzp_order_id = order.get('id')
+        # Save order_id to transaction
+        transaction.rzp_order_id = razorpay_order.get('id')
         transaction.save()
 
+        # Send necessary context to template
         context = {
-            'client_id': settings.config('RZP_CLIENT_ID'),
-            'amount': int(payment.amount * 100),
-            'rzp_order_id': order.get('id')
+            'client_id': settings.RAZORPAY_PUBLIC_KEY,
+            'amount': order_data["amount"],
+            'rzp_order_id': razorpay_order.get('id'),
+            'traveller': traveller,
+            'return_url': request.GET.get('next', '/'),  # Pass manually or fallback
+
         }
-        return render(request, 'payments/payement-page.html', context=context)
+
+        return render(request, 'payments/payment-page.html', context=context)
 
 
 class PaymentVerifyView(View):
@@ -62,37 +84,45 @@ class PaymentVerifyView(View):
         rzp_payment_id = request.POST.get('razorpay_payment_id')
         rzp_payment_signature = request.POST.get('razorpay_signature')
 
-        client = razorpay.Client(auth=(settings.config('RZP_CLIENT_ID'), settings.config('RZP_CLIENT_SECRET')))
+        client = razorpay.Client(auth=(settings.RAZORPAY_PUBLIC_KEY, settings.RAZORPAY_SECRET_KEY))
         transaction = Transactions.objects.get(rzp_order_id=rzp_order_id)
-        time_now = datetime.datetime.now()
+        time_now = datetime.now()
 
         transaction.transaction_at = time_now
         transaction.rzp_payment_id = rzp_payment_id
         transaction.rzp_payment_signature = rzp_payment_signature
 
         try:
+            # Razorpay signature verification
             client.utility.verify_payment_signature({
                 'razorpay_order_id': rzp_order_id,
                 'razorpay_payment_id': rzp_payment_id,
                 'razorpay_signature': rzp_payment_signature
             })
 
+            # Mark transaction and payment as successful
             transaction.status = 'Success'
             transaction.save()
 
-            transaction.payment.status = 'Success'
-            transaction.payment.paid_at = time_now
-            transaction.payment.save()
+            payment = transaction.payment
+            payment.status = 'Success'
+            payment.paid_at = time_now
+            payment.save()
 
-            return redirect('home')
-        except:
+            # Grant premium access
+            traveller = payment.traveller
+            traveller.has_premium_access = True
+            traveller.save()
+
+            return redirect('home')  # Redirect to previous page or home
+        except Exception as e:
             transaction.status = 'Failed'
             transaction.save()
 
             transaction.payment.status = 'Failed'
             transaction.payment.save()
 
-            return redirect('razorpay-view', uuid=transaction.payment.course.uuid)
+            return redirect('home')  # Redirect back on failure
 
 
 @method_decorator(csrf_exempt, name='dispatch')

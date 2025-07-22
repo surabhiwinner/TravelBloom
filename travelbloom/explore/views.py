@@ -238,12 +238,10 @@ def save_trip(request):
         # ✅ Send WhatsApp message after trip is saved
         try:
             traveller = Traveller.objects.get(profile=request.user)
-            recipient_number = f"91{traveller.number}"
+            if traveller.has_premium_access:
+                recipient_number = f"91{traveller.number}"
 
-            print("Traveller found:", traveller)
-            print("Recipient number:", recipient_number)
-
-            message = f"""
+                message = f"""
 🌍 Trip Confirmation: {trip.name}
 
 📍 City: {trip.city}
@@ -253,36 +251,32 @@ def save_trip(request):
 🧭 Places Chosen: {len(trip.places)}
 
 {f'🚦 Started At: {localtime(trip.started_at).strftime("%d %b %Y, %I:%M %p")}' if trip.started_at else ''}
-            """.strip()
+                """.strip()
 
-            print("WhatsApp message content:", message)
+                status_code, meta_response = send_trip_whatsapp(
+                    access_token=settings.WHATSAPP_ACCESS_TOKEN,
+                    phone_number_id=settings.WHATSAPP_PHONE_NUMBER_ID,
+                    to_number=recipient_number,
+                    message_text=message
+                )
 
+                return JsonResponse({
+                    "message": "Trip saved and WhatsApp message sent",
+                    "trip_id": trip.id,
+                    "whatsapp_status": status_code,
+                    "whatsapp_response": meta_response
+                })
+            else:
+                return JsonResponse({
+                    "message": "Trip saved. WhatsApp message not sent (Premium required)",
+                    "trip_id": trip.id
+                })
 
-            access_token = settings.WHATSAPP_ACCESS_TOKEN
-            phone_number_id = settings.WHATSAPP_PHONE_NUMBER_ID
-
-            print("Using access token:", access_token)
-            print("Phone number ID:", phone_number_id)
-
-            print("Sending WhatsApp message to:", recipient_number)
-
-            status_code, meta_response = send_trip_whatsapp(
-                access_token=access_token,
-                phone_number_id=phone_number_id,
-                to_number=recipient_number,
-                message_text=message
-            )
-            print("WhatsApp status:", status_code)
-            print("WhatsApp response:", meta_response)
-            return JsonResponse({
-                "message": "Trip saved successfully and WhatsApp message sent",
-                "trip_id": trip.id,
-                "whatsapp_status": status_code,
-                "whatsapp_response": meta_response
-            })
-        
         except Traveller.DoesNotExist:
-            return JsonResponse({"message": "Trip saved but traveller not found"}, status=200)
+            return JsonResponse({
+                "message": "Trip saved but traveller not found",
+                "trip_id": trip.id
+            })
 
         except Exception as e:
             return JsonResponse({
@@ -290,7 +284,7 @@ def save_trip(request):
                 "trip_id": trip.id,
                 "error": str(e)
             })
-        
+
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
