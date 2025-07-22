@@ -2,19 +2,19 @@
 {% load static %}
 {% block section %}
 
-<!-- 📍 MAP -->
+<!-- 🌍 MAP SECTION -->
 <div class="container mt-5">
-  <h2 class="mb-4">Nearby Tourist Attractions</h2>
-  <div id="map" style="height:400px;width:100%;border-radius:10px;"></div>
+  <h2 class="mb-4 text-primary fw-bold text-center display-6">📍 Nearby Tourist Attractions</h2>
+  <div id="map" style="height: 400px; width: 100%; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.1);"></div>
 </div>
 
-<!-- 🌍 Tourist Spots Slider -->
+<!-- 🏞️ TOURIST SPOTS SLIDER -->
 <div class="container mt-5">
-  <h4 class="mb-3">Places Around You</h4>
-  <div class="swiper mySwiper">
-    <div class="swiper-wrapper" id="places-list"></div>
-    <div class="swiper-button-next"></div>
-    <div class="swiper-button-prev"></div>
+  <h3 class="mb-4 text-center fw-semibold text-success">🌟 Places Around You</h3>
+  <div class="swiper mySwiper px-3">
+    <div class="swiper-wrapper d-flex align-items-stretch" id="places-list"></div>
+    <div class="swiper-button-next text-dark"></div>
+    <div class="swiper-button-prev text-dark"></div>
   </div>
 </div>
 
@@ -22,35 +22,31 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-<!-- ✅ Google Maps JS -->
+<!-- ✅ Google Maps API -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAbSSS6NtpW6Zx3czxf2M3GTRwG5v4I6YQ&v=beta&callback=initMap" async defer></script>
 
+<!-- 🧠 CUSTOM JS -->
 <script>
 let map;
 
-async function initMap () {
+async function initMap() {
   const { Map } = await google.maps.importLibrary('maps');
   const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
   const { Place } = await google.maps.importLibrary('places');
 
-  const location = await getUserLocation();
-  console.log("📍 Map centered at:", location);
-
-  // Initialize map
+  const userLocation = await getUserLocation();
   map = new Map(document.getElementById('map'), {
-    center: location,
+    center: userLocation,
     zoom: 13,
     mapId: '995bf07e5e9b252015e55248'
   });
 
-  // User's location marker
-  new AdvancedMarkerElement({ map, position: location, title: 'You are here' });
+  new AdvancedMarkerElement({ map, position: userLocation, title: 'You are here' });
 
-  // Search nearby tourist attractions within 50 km
   const { places } = await Place.searchNearby({
     locationRestriction: {
-      center: location,
-      radius: 50000
+      center: userLocation,
+      radius: 5000
     },
     includedPrimaryTypes: [
       'tourist_attraction',
@@ -61,64 +57,53 @@ async function initMap () {
       'amusement_park'
     ],
     maxResultCount: 10,
-    fields: [
-      'id',
-      'displayName',
-      'formattedAddress',
-      'location',
-      'photos',
-      'rating',
-      'userRatingCount'
-    ]
+    fields: ['displayName', 'formattedAddress', 'location', 'photos', 'rating', 'userRatingCount']
   });
 
   const wrapper = document.getElementById('places-list');
   wrapper.innerHTML = "";
 
   if (!places?.length) {
-    wrapper.innerHTML = "<p>No tourist attractions found within 50 km.</p>";
+    wrapper.innerHTML = `<div class="text-center text-muted">No tourist attractions found within 5 km.</div>`;
     return;
   }
 
-  console.log("✅ Places returned:", places);
-
   for (const data of places) {
-    const title = data.displayName?.text || 'Unknown';
-    const address = data.formattedAddress || 'No address';
-    const rating = data.rating ? `${data.rating} ★` : 'No rating';
-    const reviews = data.userRatingCount ? `${data.userRatingCount} reviews` : '';
+    const title = data.title?.text || data.display || "Unknown Place";
+    const address = data.formattedAddress || "No address";
+    const rating = data.rating ? `${data.rating} ★` : "No rating";
+    const reviews = data.userRatingCount ? `${data.userRatingCount} reviews` : "";
+    const placeLocation = data.location;
+    const distance = haversine(userLocation, placeLocation).toFixed(2);
 
-    // ✅ FIXED: Extract valid photo_reference from "places/..." string
-    const photoRef = data.photos?.[0]?.name?.split('/').pop();
+    const photoRef = data.photos?.[0]?.name?.split("/").pop();
     const image = photoRef
       ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=AIzaSyAbSSS6NtpW6Zx3czxf2M3GTRwG5v4I6YQ`
-      : 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/300px-No_image_available.svg.png';
+      : "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/300px-No_image_available.svg.png";
 
-    // Add marker
-    new AdvancedMarkerElement({
-      map,
-      position: data.location,
-      title: title
-    });
+    new AdvancedMarkerElement({ map, position: placeLocation, title });
 
-    // Add card to slider
     wrapper.insertAdjacentHTML('beforeend', `
-      <div class="swiper-slide">
-        <div class="card shadow-sm h-100" style="width: 300px;">
+      <div class="swiper-slide d-flex">
+        <div class="card shadow h-100" style="width: 300px; border-radius: 15px; overflow: hidden; transition: transform 0.3s;">
           <img src="${image}" class="card-img-top" alt="${title}" style="height: 200px; object-fit: cover;">
-          <div class="card-body">
-            <h5 class="card-title">${title}</h5>
-            <p class="card-text"><strong>📍</strong> ${address}</p>
-            <p class="text-muted small">⭐ ${rating} &nbsp; ${reviews}</p>
-            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}"
-               target="_blank" class="btn btn-sm btn-outline-primary">View on Google Maps</a>
+          <div class="card-body d-flex flex-column justify-content-between">
+            <div>
+              <h5 class="card-title">${title}</h5>
+              <p class="card-text"><strong>📍</strong> ${address}</p>
+              <p class="text-muted small">⭐ ${rating} &nbsp; ${reviews}</p>
+              <p class="text-muted small">📏 ${distance} km away</p>
+            </div>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(title)}"
+               target="_blank" class="btn btn-outline-primary btn-sm mt-2 w-100">
+               Get Directions
+            </a>
           </div>
         </div>
       </div>
     `);
   }
 
-  // Initialize Swiper
   new Swiper('.mySwiper', {
     slidesPerView: 1,
     spaceBetween: 20,
@@ -133,28 +118,38 @@ async function initMap () {
   });
 }
 
-// 📍 Get user's location
-function getUserLocation () {
+function getUserLocation() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
-      alert('Geolocation not supported. Showing default location.');
+      alert("Geolocation not supported.");
       return resolve({ lat: 8.5241, lng: 76.9366 });
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        console.log('✅ User location:', coords);
-        resolve(coords);
-      },
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => {
-        console.warn('⚠️ Geolocation error:', err.message);
-        alert("Couldn't retrieve location. Showing default.");
+        console.warn("⚠️ Geolocation error:", err.message);
         resolve({ lat: 8.5241, lng: 76.9366 });
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000 }
     );
   });
+}
+
+function haversine(coord1, coord2) {
+  const R = 6371;
+  const dLat = deg2rad(coord2.lat - coord1.lat);
+  const dLng = deg2rad(coord2.lng - coord1.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(deg2rad(coord1.lat)) *
+    Math.cos(deg2rad(coord2.lat)) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
 }
 </script>
 

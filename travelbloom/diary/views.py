@@ -19,6 +19,7 @@ from diary.models import DiaryMedia
 from blog.models import BlogPost
 
 # Create your views here.
+from django.contrib import messages
 
 from authentication.models import Traveller
 
