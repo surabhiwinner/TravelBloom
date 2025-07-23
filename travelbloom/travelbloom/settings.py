@@ -35,7 +35,7 @@ SECRET_KEY = config('_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['travelbloom.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
