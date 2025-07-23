@@ -1,1 +1,2 @@
-web: gunicorn travelbloom.travelbloom.wsgi:application --log-file -
+web: gunicorn travelbloom.wsgi:application --chdir travelbloom --log-file -
+
