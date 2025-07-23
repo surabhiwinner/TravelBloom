@@ -25,7 +25,7 @@ def test_home(request):
     return HttpResponse("✅ Render is working!")
 
 urlpatterns = [
-     path('', test_home),
+    #  path('', test_home),
     path('admin/', admin.site.urls),
     path('explore/',include('explore.urls')),
     path('diary/',include('diary.urls')),
@@ -33,7 +33,7 @@ urlpatterns = [
     path('chatbot/',include('chatbot.urls')),
     path('blogs/',include('blog.urls')),
     path('payment/', include('payments.urls')),
-    # path('', HomeView.as_view(), name= 'home'),
+    path('', HomeView.as_view(), name= 'home'),
     
 
 ]
