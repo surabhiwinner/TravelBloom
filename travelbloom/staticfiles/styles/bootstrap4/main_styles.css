@@ -1,0 +1,21 @@
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: rgba(0, 91, 150, 0.95);  /* travel-themed ocean blue */
+    transition: all 0.3s ease-in-out;
+}
+
+.main_nav .main_nav_list .main_nav_item a {
+    color: #fff !important;
+    font-weight: 600;
+    text-transform: capitalize;
+    padding: 10px 15px;
+    transition: background 0.3s;
+    border-radius: 5px;
+}
+
+.main_nav .main_nav_list .main_nav_item a:hover {
+    background: #007bff;
+    color: #fff;
+}
