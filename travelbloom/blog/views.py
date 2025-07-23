@@ -99,15 +99,6 @@ class AddCommentView(View):
 
 
 @method_decorator(login_required, name='dispatch')
-class DeleteBlogPostView(View):
-    def post(self, request, pk):
-        blog = get_object_or_404(BlogPost, pk=pk)
-        if blog.author.user == request.user:
-            blog.delete()
-        return redirect('blog-list')
-
-
-@method_decorator(login_required, name='dispatch')
 class DeleteBlogCommentView(View):
     def post(self, request, pk):
         comment = get_object_or_404(BlogComment, pk=pk)
@@ -119,7 +110,7 @@ class DeleteBlogCommentView(View):
         return redirect(request.META.get('HTTP_REFERER', 'blog-list'))
 
 
-
+@method_decorator(login_required, name='dispatch')
 class DeleteBlogPostView(View):
     def post(self, request, pk):
         blog = get_object_or_404(BlogPost, pk=pk)
