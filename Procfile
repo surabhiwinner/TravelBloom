@@ -1,2 +1,1 @@
-web: gunicorn travelbloom.wsgi:application --chdir travelbloom --log-file -
-
+web: gunicorn travelbloom.wsgi:application --chdir travelbloom --bind 0.0.0.0:$PORT --log-file -
