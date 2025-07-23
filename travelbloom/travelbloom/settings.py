@@ -35,7 +35,7 @@ SECRET_KEY = config('_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['SmartVoyegerSurabhi.pythonanywhere.com']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -200,24 +200,6 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # Razorpay Keys (used for premium feature payments)
 RAZORPAY_PUBLIC_KEY = config('RAZORPAY_PUBLIC_KEY')
 RAZORPAY_SECRET_KEY = config('RAZORPAY_SECRET_KEY')
-
-
-
-#amadeus_apis(to get hotel details)
-
-AMADEUS_API_KEY = config('AMADEUS_KEY')
-AMADEUS_API_SECRET = config('AMADEUS__SECRET')
-
-
-# twilio account
-
-TWILIO_ACCOUNT_SID =config('SID__')
-TWILIO_AUTH_TOKEN =config('_TOKEN')
-TWILIO_WHATSAPP_NUMBER =config('NUM_')
-
-
-
-
 
 
 # whatsapp meta api
