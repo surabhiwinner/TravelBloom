@@ -45,8 +45,7 @@ GOOGLE = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
 GOOGLE_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 
-AMADEUS_API_KEY = settings.AMADEUS_API_KEY
-AMADEUS_API_SECRET = settings.AMADEUS_API_SECRET
+
 
 
 def map_view(request):
