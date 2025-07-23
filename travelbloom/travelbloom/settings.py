@@ -210,3 +210,8 @@ RAZORPAY_SECRET_KEY = config('RAZORPAY_SECRET_KEY')
 # whatsapp meta api
 WHATSAPP_ACCESS_TOKEN = config('WHATSAPP_ACCESS_TOKEN')
 WHATSAPP_PHONE_NUMBER_ID = config('WHATSAPP_PHONE_NUMBER_ID')
+
+
+
+
+print("✅ Django settings loaded")
