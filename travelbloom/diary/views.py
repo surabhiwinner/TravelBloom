@@ -117,11 +117,10 @@ class DiaryListView(View):
         diary_entries = DiaryEntry.objects.filter(profile=request.user)
 
         show_modal = False
-        try:
-            traveller = request.user.traveller
-            show_modal = not traveller.has_premium_access
-        except:
-            show_modal = True  # fallback if traveller not found
+        if request.user.is_authenticated :
+            print("User:", request.user.username)
+            print("Premium Access:", request.user.has_premium_access)  # ✅ Check this value
+            show_modal = not request.user.has_premium_access # fallback if traveller not found
 
         return render(request, 'diary/entry_list_page.html', {
             'diary_entries': diary_entries,

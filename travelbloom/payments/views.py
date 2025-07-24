@@ -111,8 +111,8 @@ class PaymentVerifyView(View):
 
             # Grant premium access
             traveller = payment.traveller
-            traveller.has_premium_access = True
-            traveller.save()
+            traveller.profile.has_premium_access = True
+            traveller.profile.save()
 
             return redirect('home')  # Redirect to previous page or home
         except Exception as e:

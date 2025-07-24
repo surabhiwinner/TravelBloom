@@ -63,17 +63,6 @@
     {% endif %}
 </div>
 
-<!-- Premium Modal Trigger -->
-{% if show_modal %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var modalEl = document.getElementById('premiumModal');
-      if (modalEl) {
-        var modal = new bootstrap.Modal(modalEl);
-        modal.show();
-      }
-    });
-  </script>
 
  <!-- Premium Unlock Modal -->
 <div class="modal fade" id="premiumModal" tabindex="-1" aria-labelledby="premiumModalLabel" aria-hidden="true">
@@ -102,7 +91,7 @@
           <li class="mb-2">🚀 <strong>Early Feature Access</strong></li>
         </ul>
 
-        {% if request.user.is_authenticated and request.user.traveller and request.user.traveller.uuid %}
+        {% if request.user.is_authenticated and not request.user.has_premium_access %}
           <a href="{% url 'razorpay-page' request.user.traveller.uuid %}" class="btn btn-success btn-lg px-4 py-2 rounded-pill shadow-sm">
             🔓 Unlock Now – ₹99
           </a>
@@ -114,6 +103,17 @@
   </div>
 </div>
 
-
+<!-- Premium Modal Trigger -->
+{% if show_modal %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var modalEl = document.getElementById('premiumModal');
+      if (modalEl) {
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    });
+  </script>
 {% endif %}
+ 
 {% endblock %}

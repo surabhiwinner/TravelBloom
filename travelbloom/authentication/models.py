@@ -15,6 +15,7 @@ class RoleChoices(models.TextChoices):
 class Profile(AbstractUser):
 
     role = models.CharField(max_length=20, choices=RoleChoices.choices)
+    has_premium_access = models.BooleanField(default=False)
 
     
     def __str__(self):
@@ -41,7 +42,7 @@ class Traveller(BaseClass):
     number = models.CharField(max_length=10)
 
 
-    has_premium_access = models.BooleanField(default=False)
+    
 
     def __str__(self):
         return f'{self.name}'

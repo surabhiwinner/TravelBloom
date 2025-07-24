@@ -120,7 +120,7 @@
           <li class="mb-3">🚀 <strong>Early Access</strong> </li>
         </ul>
 
-        {% if request.user.is_authenticated and request.user.traveller and request.user.traveller.uuid %}
+        {% if request.user.is_authenticated and not request.user.has_premium_access %}
           <a href="{% url 'razorpay-page' request.user.traveller.uuid %}" class="btn btn-primary px-4 py-2 mt-2">
             🔓 Unlock Now
           </a>

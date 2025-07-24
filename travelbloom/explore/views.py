@@ -365,8 +365,8 @@ class PlannerView(View):
      def get(self, request, *args, **kwargs):
         show_modal = False
 
-        if request.user.is_authenticated and hasattr(request.user, 'traveller'):
-            show_modal = not request.user.traveller.has_premium_access
+        if request.user.is_authenticated :
+            show_modal = not request.user.has_premium_access
 
         data = {
             'page': 'planner-page',

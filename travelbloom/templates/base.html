@@ -247,7 +247,7 @@
 
 
   {% if request.user.is_authenticated %}
-  {% if request.user.traveller.has_premium_access %}
+  {% if request.user.has_premium_access %}
     <li class="nav-item">
       <a class="nav-link {% if page == 'contact-page' %}text-white{% else %}fw-bold text-secondary{% endif %}" href="{% url 'contact' %}">
         Contact
@@ -277,7 +277,7 @@
                  class="rounded-circle me-2" style="width: 30px; height: 30px;">
             
             <p class="fw-bold text-white ms-1 mb-0 d-flex align-items-center">
-                {% if request.user.traveller.has_premium_access %}
+                {% if request.user.has_premium_access %}
                     <span title="Premium User" class="me-1 fs-4">👑</span>
                 {% endif %}
                 {{ request.user.first_name }} {{ request.user.last_name }}
