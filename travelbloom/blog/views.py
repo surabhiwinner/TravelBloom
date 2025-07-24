@@ -17,7 +17,7 @@ class BlogListCreateView(View):
     def get(self, request):
         blogs = BlogPost.objects.filter(active_status=True).order_by('-created_at')
         form = BlogPostForm()
-        return render(request, "blog/blog_list.html", {"blogs": blogs, "form": form})
+        return render(request, "blog/blog_list.html", {"blogs": blogs, "form": form, 'page':'blog-page'})
 
     def post(self, request):
         if not request.user.is_authenticated:

@@ -131,7 +131,7 @@
     </div>
   </div>
 </div>
-{% if request.user.is_authenticated and not request.user.traveller.is_premium %}
+{% if show_modal %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     var premiumModal = new bootstrap.Modal(document.getElementById('premiumModal'));

@@ -362,13 +362,18 @@ def render_selected_list(request):
 
 class PlannerView(View):
     
-    def get(self, request, *args, **kwargs):
+     def get(self, request, *args, **kwargs):
+        show_modal = False
+
+        if request.user.is_authenticated and hasattr(request.user, 'traveller'):
+            show_modal = not request.user.traveller.has_premium_access
+
         data = {
             'page': 'planner-page',
-            'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
+            'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY,
+            'show_modal': show_modal,
         }
         return render(request, 'explore/planner.html', context=data)
-
 
 
 
