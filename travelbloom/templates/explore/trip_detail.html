@@ -17,10 +17,9 @@
           {% if trip.status == 'Planning' %} bg-info
           {% elif trip.status == 'Ongoing' %} bg-warning
           {% elif trip.status == 'Completed' %} bg-success
-          {% endif %}">
-          {{ trip.status }}
-        </span>
+          {% endif %}">{{ trip.status }}</span>
       </p>
+
       {% if trip.status == 'Planning' %}
         <form method="post" action="{% url 'start-trip' trip.uuid %}">
           {% csrf_token %}
@@ -68,19 +67,31 @@
     <div class="card-body">
       <h5 class="card-title text-primary">🗺️ Route Map</h5>
       <div id="map" class="rounded shadow-sm" style="height: 500px;"></div>
-      <a id="start-direction-btn"
-         href="#"
-         target="_blank"
-         class="btn btn-outline-primary mt-4">
-         ▶️ Start Directions in Google Maps
+      <a id="start-direction-btn" href="#" target="_blank" class="btn btn-outline-primary mt-4">
+        ▶️ Start Directions in Google Maps
       </a>
-
     </div>
   </div>
 
-  
+  <!-- WhatsApp Share Form (only if ongoing or completed) -->
+  {% if trip.status != "Planning" %}
+    <div class="card shadow mt-4">
+      <div class="card-body">
+        <h5 class="card-title text-success">📤 Share Trip via WhatsApp</h5>
+        <form id="whatsapp-form" class="row g-3">
+          {% csrf_token %}
+          <input type="hidden" id="trip_id" value="{{ trip.uuid }}">
+          <div class="col-md-6">
+            <input type="text" id="phone_number" class="form-control" placeholder="Enter WhatsApp number with country code">
+          </div>
+          <div class="col-md-6">
+            <button type="submit" class="btn btn-success">📲 Send via WhatsApp</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {% endif %}
 </div>
-
 
 <!-- JSON Data -->
 {{ places|json_script:"trip-stops-data" }}
@@ -127,7 +138,6 @@
 
         route.legs.forEach((leg, i) => {
           totalDistance += leg.distance.value;
-
           const distanceEl = document.querySelector(`#stop-${i + 1} .stop-distance`);
           if (distanceEl) {
             distanceEl.innerHTML = `🚗 <strong>${leg.distance.text}</strong> from previous stop`;
@@ -135,50 +145,11 @@
         });
 
         document.getElementById("total-distance").innerText = `${(totalDistance / 1000).toFixed(1)} km`;
-
-        // Set Google Maps Directions URL
         setDirectionLink(stops);
       } else {
         alert("⚠️ Failed to load directions: " + status);
       }
     });
-  }
-
-  document.getElementById("whatsapp-form").addEventListener("submit", function(e) {
-  e.preventDefault();
-
-  const phone_number = document.getElementById("phone_number").value;
-  const trip_id = document.getElementById("trip_id").value;
-
-  fetch("/explore/send-trip-whatsapp/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": "{{ csrf_token }}"
-    },
-    body: JSON.stringify({
-      phone_number: phone_number,
-      trip_id: trip_id
-    })
-  })
-  .then(res => res.json())
-  .then(data => alert(data.message))
-  .catch(err => console.error(err));
-});
-
-
-  function setDirectionLink(stops) {
-    if (stops.length < 2) return;
-
-    const origin = `${stops[0].lat},${stops[0].lng}`;
-    const destination = `${stops[stops.length - 1].lat},${stops[stops.length - 1].lng}`;
-    const waypoints = stops.slice(1, -1).map(p => `${p.lat},${p.lng}`).join('|');
-
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving${
-      waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ''
-    }`;
-
-    document.getElementById('start-direction-btn').href = url;
   }
 
   function completeTrip(uuid) {
@@ -200,6 +171,41 @@
       }
     });
   }
+
+  function setDirectionLink(stops) {
+    if (stops.length < 2) return;
+    const origin = `${stops[0].lat},${stops[0].lng}`;
+    const destination = `${stops[stops.length - 1].lat},${stops[stops.length - 1].lng}`;
+    const waypoints = stops.slice(1, -1).map(p => `${p.lat},${p.lng}`).join('|');
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ''}`;
+    document.getElementById('start-direction-btn').href = url;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const whatsappForm = document.getElementById("whatsapp-form");
+    if (whatsappForm) {
+      whatsappForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const phone_number = document.getElementById("phone_number").value;
+        const trip_id = document.getElementById("trip_id").value;
+
+        fetch("/explore/send-trip-whatsapp/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+          },
+          body: JSON.stringify({
+            phone_number,
+            trip_id
+          })
+        })
+          .then(res => res.json())
+          .then(data => alert(data.message))
+          .catch(err => console.error(err));
+      });
+    }
+  });
 </script>
 
 <!-- Google Maps API -->

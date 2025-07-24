@@ -545,7 +545,13 @@ class TripCompleteView(View):
 
         return JsonResponse({'success' :True })
 
-
+def is_hotel(place):
+    """
+    Basic check to identify hotels based on keywords in the name.
+    You can improve this using `types` from Google Places if needed.
+    """
+    name = place.get("name", "").lower()
+    return "hotel" in name or "resort" in name or "inn" in name or "lodge" in name
 
 class TripDetailView(View):
     def get(self, request, uuid):
@@ -579,37 +585,70 @@ class TripDetailView(View):
         all_places = [fetch_place(pid) for pid in trip.place_ids]
         all_places = [p for p in all_places if p and p["lat"] and p["lng"]]
 
+        multiple_hotels = False
+
         if not all_places:
             ordered_place_details = []
+
         else:
-            # Identify the hotel (either by name or your own logic)
-            hotel_index = next((i for i, p in enumerate(all_places) if "hotel" in p["name"].lower()), 0)
-            hotel = all_places.pop(hotel_index)
-            hotel["is_hotel"] = True
+            # Identify hotels and spots
+            hotels = [p for p in all_places if is_hotel(p)]
+            spots = [p for p in all_places if not is_hotel(p)]
 
-            # Mark others and sort by distance from hotel
-            for p in all_places:
-                p["is_hotel"] = False
-                p["distance_from_hotel"] = haversine(hotel["lat"], hotel["lng"], p["lat"], p["lng"])
+            if len(hotels) > 1:
+                multiple_hotels = True
+                ordered_place_details = hotels + spots  # Show all, warn in template
+            elif len(hotels) == 1:
+                hotel = hotels[0]
+                hotel["is_hotel"] = True
 
-            attractions = sorted(all_places, key=lambda p: p["distance_from_hotel"])
+                # Greedy sort from hotel
+                start = hotel
+                rest = spots[:]
+                ordered = [start]
 
-            ordered_place_details = [hotel] + attractions
+                while rest:
+                    last = ordered[-1]
+                    nearest = min(rest, key=lambda p: haversine(last["lat"], last["lng"], p["lat"], p["lng"]))
+                    ordered.append(nearest)
+                    rest.remove(nearest)
 
-        # Annotate visited status
+                for p in ordered:
+                    p["is_hotel"] = p["place_id"] == hotel["place_id"]
+
+                ordered_place_details = ordered
+
+            else:
+                # No hotel: just greedy from first spot
+                start = spots[0]
+                rest = spots[1:]
+                ordered = [start]
+
+                while rest:
+                    last = ordered[-1]
+                    nearest = min(rest, key=lambda p: haversine(last["lat"], last["lng"], p["lat"], p["lng"]))
+                    ordered.append(nearest)
+                    rest.remove(nearest)
+
+                for p in ordered:
+                    p["is_hotel"] = False
+
+                ordered_place_details = ordered
+
         for p in ordered_place_details:
             p["all_visited"] = all_visited
 
         traveller = Traveller.objects.get(profile=request.user)
 
-        context = {
+        return render(request, "explore/trip_detail.html", {
             "trip": trip,
             "places": ordered_place_details,
             "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
             "traveller": traveller,
             "razorpay_key": settings.RAZORPAY_PUBLIC_KEY,
-        }
-        return render(request, "explore/trip_detail.html", context)
+            "multiple_hotels": multiple_hotels,
+        })
+
 
 
 
