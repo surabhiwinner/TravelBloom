@@ -20,13 +20,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "authentication",
     "diary",
-    "product_services",
-    "leads",
-    "students",
     "widget_tweaks",
     "chatbot",
     "blog",
     "payments",
+    "explore",
+
+
 ]
 
 # Middleware
@@ -64,7 +64,7 @@ WSGI_APPLICATION = "travelbloom.wsgi.application"
 # Database
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL"), conn_max_age=600, ssl_require=True
+        default=config("DATABASE_URL"), conn_max_age=600, ssl_require=True
     )
 }
 
