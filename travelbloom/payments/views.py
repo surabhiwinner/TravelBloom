@@ -20,7 +20,7 @@ class PremiumConfirmationView(View):
         payment = Payments.objects.filter(traveller=traveller, status='Success').order_by('-paid_at').first()
 
         if payment:
-            traveller.has_premium_access = True
+            traveller.profile.has_premium_access = True
             traveller.save()
             message = "Premium access granted"
         else:

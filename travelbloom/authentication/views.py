@@ -10,6 +10,7 @@ from travelbloom.utility import send_email
 from .forms import LoginForm, TravellerRegisterForm, ProfileForm
 from .models import Profile, Traveller
 import threading
+from django.contrib import messages
 
 # Optional: your email function
 
@@ -81,51 +82,80 @@ class RegisterTravellerView(View):
 
 
 
-    def post(self, request, *args, **kwargs):
-        profile_form = ProfileForm(request.POST)
-        traveller_form = TravellerRegisterForm(request.POST, request.FILES)
+    # def post(self, request, *args, **kwargs):
+    #     profile_form = ProfileForm(request.POST)
+    #     traveller_form = TravellerRegisterForm(request.POST, request.FILES)
 
-        print("Profile Form Errors:", profile_form.errors)
-        print("Traveller Form Errors:", traveller_form.errors)
+    #     print("Profile Form Errors:", profile_form.errors)
+    #     print("Traveller Form Errors:", traveller_form.errors)
 
-        if profile_form.is_valid() and traveller_form.is_valid():
+    #     if profile_form.is_valid() and traveller_form.is_valid():
 
-            try:
-                with transaction.atomic():
-                    profile = profile_form.save(commit=False)
+    #         try:
+    #             with transaction.atomic():
+    #                 profile = profile_form.save(commit=False)
 
-                    email = profile_form.cleaned_data.get('email')
-                    password = profile_form.cleaned_data.get('password')
+    #                 email = profile_form.cleaned_data.get('email')
+    #                 password = profile_form.cleaned_data.get('password')
 
-                    profile.username = email
-                    profile.role = 'User'
-                    profile.date_joined = timezone.now()
-                    profile.password = make_password(password)
+    #                 profile.username = email
+    #                 profile.role = 'User'
+    #                 profile.date_joined = timezone.now()
+    #                 profile.password = make_password(password)
 
-                    profile.save()
+    #                 profile.save()
                     
 
-                    traveller = traveller_form.save(commit=False)
-                    traveller.profile = profile
-                    traveller.name = f'{profile.first_name} {profile.last_name}'
-                    traveller.email = profile.email
-                    traveller.save()
+    #                 traveller = traveller_form.save(commit=False)
+    #                 traveller.profile = profile
+    #                 traveller.name = f'{profile.first_name} {profile.last_name}'
+    #                 traveller.email = profile.email
+    #                 traveller.save()
 
-                    # send email
-                    subject = 'Successfully Registered !!!'
-                    recipient = profile.email
-                    template = 'emails/success-registration.html'
-                    context = {'name': traveller.name, 'username': profile.username, 'password': password}
-                    threading.Thread(target=send_email, args=(subject, recipient, template, context)).start()
+    #                 # send email
+    #                 subject = 'Successfully Registered !!!'
+    #                 recipient = profile.email
+    #                 template = 'emails/success-registration.html'
+    #                 context = {'name': traveller.name, 'username': profile.username, 'password': password}
+    #                 threading.Thread(target=send_email, args=(subject, recipient, template, context)).start()
 
-                    return redirect('login')
-            except IntegrityError:
+    #                 return redirect('login')
+    #         except IntegrityError:
 
-                profile_form.add_error(None, "A traveller with this profile already exists.")
+    #             profile_form.add_error(None, "A traveller with this profile already exists.")
 
 
-        # Show errors if form is invalid
-        return render(request, 'authentication/register_user.html', {
-            'profile_form': profile_form,
+    #     # Show errors if form is invalid
+    #     return render(request, 'authentication/register_user.html', {
+    #         'profile_form': profile_form,
+    #         'traveller_form': traveller_form
+    #     })
+
+    def post(self, request):
+        form = ProfileForm(request.POST)
+        traveller_form = TravellerRegisterForm(request.POST, request.FILES)
+
+        if form.is_valid() and traveller_form.is_valid():
+            profile = form.save(commit=False)
+            profile.role = 'User'
+            profile.save()
+
+            # Get auto-created traveller from signal
+            traveller = profile.traveller
+
+            # Now update it using form data (number, image, etc.)
+            traveller.number = traveller_form.cleaned_data['number']
+            traveller.image = traveller_form.cleaned_data.get('image')
+            traveller.save()
+
+            login(request, profile)
+            messages.success(request, 'Registration successful!')
+            return redirect('home')  # Replace with your desired redirect
+        else:
+            messages.error(request, 'Registration failed. Please fix the errors below.')
+
+        return render(request, 'authentication/register.html', {
+            'form': form,
             'traveller_form': traveller_form
         })
+

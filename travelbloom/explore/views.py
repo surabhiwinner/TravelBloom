@@ -49,18 +49,16 @@ GOOGLE_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/jso
 
 
 def map_view(request):
+    places = Touristplace.objects.all()
+    data = {
+        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY,
+        'page': 'map-page'
+    }
+    return render(request, 'explore/map.html', context=data)
 
-        places = Touristplace.objects.all()
-
-        data = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY,
-                'page':'map-page'}
-
-        return render(request,'explore/map.html',context=data)
-    
 @require_POST
 @csrf_protect
 def save_user_location(request):
-        
     try:
         data = json.loads(request.body)
         latitude = data.get('latitude')
@@ -69,19 +67,22 @@ def save_user_location(request):
         if latitude is not None and longitude is not None:
             latitude = float(latitude)
             longitude = float(longitude)
-
             print(f"Django Backend Received: Latitude = {latitude}, Longitude = {longitude}")
 
-            # --- Your Python logic to use latitude and longitude goes here ---
-            # E.g., save to a database, perform server-side calculations, etc.
+            # You can save it to DB here if needed.
 
-            return JsonResponse({'status': 'success', 'message': 'Location received and processed by backend.', 'latitude': latitude, 'longitude': longitude})
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Location received and processed by backend.',
+                'latitude': latitude,
+                'longitude': longitude
+            })
         else:
             return JsonResponse({'status': 'error', 'message': 'Latitude or Longitude not provided in request.'}, status=400)
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': f'An internal server error occurred: {str(e)}'}, status=500)
+        return JsonResponse({'status': 'error', 'message': f'Internal server error: {str(e)}'}, status=500)
 
 
 # UNWANTED_KEYWORDS = ["gym","bank", "fitness", "lab","stop", "hospital", "clinic", "pharmacy"]
@@ -237,7 +238,7 @@ def save_trip(request):
         # ✅ Send WhatsApp message after trip is saved
         try:
             traveller = Traveller.objects.get(profile=request.user)
-            if traveller.has_premium_access:
+            if request.user.has_premium_access:
                 recipient_number = f"91{traveller.number}"
 
                 message = f"""
