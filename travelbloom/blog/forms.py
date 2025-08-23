@@ -19,7 +19,8 @@ class BlogPostForm(forms.ModelForm):
                 'class': 'form-control'
             }),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Make title optional (can fallback to "Untitled" in view)
         self.fields['title'].required = False

@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
-{% load dict_extras split_filters %}
+{% load dict_extras %}
 
 {% block section %}
 <div class="container py-5">
   <h1 class="text-center fw-bold display-5 text-primary mb-5">📸 Travel Stories & Adventures</h1>
 
   {% if user.is_authenticated %}
+  <!-- Blog creation form -->
   <div class="row justify-content-center mb-5">
     <div class="col-md-10 col-lg-8">
       <div class="card border-0 shadow rounded-3">
@@ -50,22 +51,21 @@
   {% endif %}
 
   {% if blogs %}
+  <!-- Blog posts list -->
   <div class="row g-5">
     {% for blog in blogs %}
     <div class="col-lg-6">
       <div class="card blog-card shadow border-0 rounded-4 h-100" id="blog-{{ blog.id }}">
         {% if blog.image %}
-        <img src="{{ blog.image.url }}" class="card-img-top" style="height: 280px; object-fit: cover;" alt="{{ blog.caption|default:blog.title }}">
+        <img src="{{ blog.image.url }}" class="card-img-top" style="height: 280px; object-fit: cover;" alt="{{ blog.title }}">
         {% endif %}
 
         <div class="card-body d-flex flex-column">
           <div class="d-flex justify-content-between align-items-start">
             <h5 class="card-title text-primary">{{ blog.title }}</h5>
 
-            <!-- DELETE BUTTON inside dropdown (author or superuser only) -->
-           {% if user.is_authenticated and user == blog.author or user.is_superuser %}
-
-
+            <!-- Delete button -->
+            {% if user.is_authenticated and (user == blog.author or user.is_superuser) %}
             <div class="dropdown">
               <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 ⋮
@@ -84,21 +84,10 @@
 
           <p class="text-muted small mb-2">By {{ blog.author }} on {{ blog.created_at|date:"M d, Y" }}</p>
 
-          <!-- {% if blog.caption %}
-          <blockquote class="blockquote text-secondary small fst-italic">"{{ blog.caption }}"</blockquote>
-          {% endif %} -->
-
-          {% if blog.hashtags %}
-          <div class="mb-2">
-            {% for tag in blog.hashtags|split %}
-              <span class="badge bg-secondary">#{{ tag }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
-
           <p class="card-text">{{ blog.content|truncatewords:40 }}</p>
 
           {% if user.is_authenticated %}
+          <!-- Like, Share, Comment section -->
           <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
             <div class="d-flex align-items-center">
               <button id="like-btn-{{ blog.id }}" onclick="toggleLike({{ blog.id }})" class="btn btn-outline-primary btn-sm me-2">
@@ -122,6 +111,7 @@
           <p class="text-muted">Login to like, share or comment.</p>
           {% endif %}
 
+          <!-- Comments section -->
           {% if blog.comments.exists %}
           <div class="mt-3">
             <h6 class="text-muted mb-2">💬 Comments ({{ blog.comments.count }})</h6>
@@ -135,7 +125,7 @@
                     <small class="text-muted ms-2">{{ comment.created_at|date:"M d, Y H:i" }}</small>
                     <p class="mb-1">{{ comment.comment }}</p>
                   </div>
-                  {% if user.is_authenticated and user == comment.user %}
+                  {% if user.is_authenticated and (user == comment.user or user.is_superuser) %}
                   <form method="post" action="{% url 'delete-blog-comment' comment.id %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-link text-danger p-0">🗑️</button>
@@ -162,7 +152,7 @@
                     <small class="text-muted ms-2">{{ comment.created_at|date:"M d, Y H:i" }}</small>
                     <p class="mb-1">{{ comment.comment }}</p>
                   </div>
-                  {% if user.is_authenticated and user == comment.user %}
+                  {% if user.is_authenticated and (user == comment.user or user.is_superuser) %}
                   <form method="post" action="{% url 'delete-blog-comment' comment.id %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-link text-danger p-0">🗑️</button>
@@ -224,7 +214,6 @@ function sharePost(url) {
 }
 
 function toggleComments(blogId) {
-  const preview = document.getElementById(`comments-preview-${blogId}`);
   const all = document.getElementById(`all-comments-${blogId}`);
   const btn = document.getElementById(`toggle-btn-${blogId}`);
 
