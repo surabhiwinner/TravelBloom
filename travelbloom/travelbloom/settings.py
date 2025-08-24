@@ -122,7 +122,7 @@ WHATSAPP_PHONE_NUMBER_ID = config("WHATSAPP_PHONE_NUMBER_ID")
 LOGGING = {
     "version": 1,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "loggers": {"django": {"handlers": ["console"], "level": "INFO"}},
+    "loggers": {"django": {"handlers": ["console"], "level": "DEBUG"}},
 }
 
 print("✅ Django settings loaded successfully")
