@@ -25,6 +25,8 @@ protobuf==5.29.5
 PyJWT==2.10.1
 python-decouple==3.8
 python-dotenv==1.1.1
+psycopg2-binary==2.9.9
+
 pytz==2025.2
 razorpay==1.4.2
 requests==2.32.4
