@@ -1,28 +1,16 @@
-"""
-WSGI config for travelbloom project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
-"""
-
-# import os
-
-# from django.core.wsgi import get_wsgi_application
-
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'travelbloom.settings')
-
-# application = get_wsgi_application()
-
-
 import os
 import sys
+import traceback
 
-print("🚀 WSGI loading...")  # Add this line
-
-from django.core.wsgi import get_wsgi_application
+print("🚀 WSGI loading...")
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'travelbloom.settings')
 
-application = get_wsgi_application()
+try:
+    from django.core.wsgi import get_wsgi_application
+    application = get_wsgi_application()
+    print("✅ Django settings loaded successfully")
+except Exception:
+    print("❌ WSGI failed to load Django settings:", file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+    raise
