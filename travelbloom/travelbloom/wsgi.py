@@ -5,7 +5,7 @@ import traceback
 print("🚀 WSGI loading...")
 
 # ✅ point to the correct nested settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'travelbloom.travelbloom.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'travelbloom.settings')
 
 try:
     from django.core.wsgi import get_wsgi_application
