@@ -7,7 +7,7 @@ from django.conf import settings
 from google import generativeai as genai
 
 # ── Configure Gemini API ────────────────────────────────────────────────
-genai.configure(api_key=settings.GEMINI_API_KEY)
+genai.configure(api_key=settings.GEMINI_KEY)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ChatBotView(LoginRequiredMixin, View):
